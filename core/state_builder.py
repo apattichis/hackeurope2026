@@ -5,6 +5,17 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 
+from config import (
+    ATR_WINDOW,
+    TBM_LOSS,
+    TBM_TIME_HORIZON,
+    TBM_TIE_BREAK,
+    TBM_WIN,
+    TREND_SLOPE_LOOKBACK,
+    TREND_SLOPE_THRESHOLD,
+    TREND_SMA_WINDOW,
+    VOL_SMA_WINDOW,
+)
 from labeling import _atr_series, _resolve_col, apply_triple_barrier
 
 
@@ -19,15 +30,15 @@ class StateMatrixBuilder:
         close_col: str = "close",
         volume_col: str = "volume",
         datetime_col: Optional[str] = None,
-        trend_sma_window: int = 50,
-        trend_slope_lookback: int = 3,
-        trend_slope_threshold: float = 0.0005,
-        atr_window: int = 24,
-        vol_sma_window: int = 20,
-        tbm_win: float = 4.0,
-        tbm_loss: float = 2.0,
-        tbm_time_horizon: int = 50,
-        tbm_tie_break: str = "stop_first",
+        trend_sma_window: int = TREND_SMA_WINDOW,
+        trend_slope_lookback: int = TREND_SLOPE_LOOKBACK,
+        trend_slope_threshold: float = TREND_SLOPE_THRESHOLD,
+        atr_window: int = ATR_WINDOW,
+        vol_sma_window: int = VOL_SMA_WINDOW,
+        tbm_win: float = TBM_WIN,
+        tbm_loss: float = TBM_LOSS,
+        tbm_time_horizon: int = TBM_TIME_HORIZON,
+        tbm_tie_break: str = TBM_TIE_BREAK,
     ) -> None:
         if tbm_tie_break not in {"stop_first", "profit_first"}:
             raise ValueError("tbm_tie_break must be one of {'stop_first', 'profit_first'}")
@@ -69,6 +80,7 @@ class StateMatrixBuilder:
         df = self._add_trend_regime(df)
         df = self._add_vol_regime(df)
         df = self._add_triple_barrier_targets(df)
+        df = self._finalize_output(df)
 
         self._state_matrix = df
         return df.copy()
@@ -108,12 +120,26 @@ class StateMatrixBuilder:
             df.index = idx[idx.notna()]
 
         df = df.sort_index()
-        df.index.name = "datetime"
+        df.index.name = "open_time"
 
         # Ensure numeric OHLCV for downstream calculations.
         for key in ("open", "high", "low", "close", "volume"):
             col = self._col_cache[key]
             df[col] = pd.to_numeric(df[col], errors="coerce")
+            if col != key:
+                df[key] = df[col]
+
+        # Normalize optional market microstructure columns when present.
+        optional_map = {
+            "quote_volume": ("quote_volume", "Quote volume"),
+            "count": ("count", "Number of trades"),
+            "taker_buy_volume": ("taker_buy_volume", "Taker buy base asset volume"),
+        }
+        for canonical, aliases in optional_map.items():
+            for candidate in aliases:
+                if candidate in df.columns:
+                    df[canonical] = pd.to_numeric(df[candidate], errors="coerce")
+                    break
 
         return df
 
@@ -189,6 +215,41 @@ class StateMatrixBuilder:
             self._col_cache["low"],
             self._col_cache["close"],
         )
+
+    def _finalize_output(self, df: pd.DataFrame) -> pd.DataFrame:
+        out = df.copy()
+
+        atr_col = f"ATR_{self.atr_window}"
+        tmp_cols = [
+            "sma_50",
+            "sma_50_slope_3",
+            atr_col,
+            f"{atr_col}_SMA_{self.vol_sma_window}",
+        ]
+        out = out.drop(columns=[c for c in tmp_cols if c in out.columns], errors="ignore")
+
+        ordered = [
+            "open",
+            "high",
+            "low",
+            "close",
+            "volume",
+            "quote_volume",
+            "count",
+            "taker_buy_volume",
+            "session",
+            "trend_regime",
+            "vol_regime",
+            "tbm_label",
+            "tbm_long_pnl",
+            "tbm_long_exit_idx",
+            "tbm_long_duration",
+            "tbm_short_pnl",
+            "tbm_short_exit_idx",
+            "tbm_short_duration",
+        ]
+        existing = [c for c in ordered if c in out.columns]
+        return out[existing]
 
 
 __all__ = ["StateMatrixBuilder"]

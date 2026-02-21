@@ -76,7 +76,7 @@ council_of_alphas/
 │   └── scientist.py              ← to build
 │
 ├── eda/
-│   └── (EDA notebooks)
+│   └── eda.ipynb                    ← state matrix EDA (regime coverage, TBM edge, drift)
 │
 ├── data/
 │   ├── README.md
