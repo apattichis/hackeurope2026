@@ -5,24 +5,24 @@ All other modules import from here. No magic numbers in code.
 """
 
 # ── Data ──────────────────────────────────────────────────────────────────────
-DATA_PATH = "data/sol_usd_15m_3y.parquet"
-STATE_MATRIX_PATH = "data/state_matrix.parquet"
+DATA_PATH = "data/sol_usd_1h.parquet"
+STATE_MATRIX_PATH = "data/state_matrix_1h.parquet"
 
 # ── State Matrix / Regime Detection ───────────────────────────────────────────
-TREND_SMA_WINDOW = 50
+TREND_SMA_WINDOW = 50                # 50 bars = ~2 days on 1h
 TREND_SLOPE_LOOKBACK = 3
-TREND_SLOPE_THRESHOLD = 0.0005      # ±0.0005 for 15m candles
-ATR_WINDOW = 24                      # 24 bars = 6 hours on 15m
+TREND_SLOPE_THRESHOLD = 0.0005
+ATR_WINDOW = 24                      # 24 bars = 24 hours on 1h
 VOL_SMA_WINDOW = 20
 
 # ── Triple Barrier (fixed system-wide — NOT on Strategy objects) ───────────────
 TBM_WIN = 3.0                        # Take Profit = entry + 3.0 × ATR
 TBM_LOSS = 1.5                       # Stop Loss   = entry - 1.5 × ATR
-TBM_TIME_HORIZON = 32                # Max 32 bars (~8 hours)
+TBM_TIME_HORIZON = 24                # Max 24 bars (~24 hours on 1h)
 TBM_TIE_BREAK = "stop_first"        # Worst-case on whipsaw
 
 # ── Backtesting ────────────────────────────────────────────────────────────────
-BACKTEST_FEE = 0.00075              # 0.075% Binance maker fee
+BACKTEST_FEE = 0.00040              # 0.04% MEXC taker fee
 
 # ── Diagnostics ────────────────────────────────────────────────────────────────
 MIN_TRADES_SUFFICIENT_EVIDENCE = 30

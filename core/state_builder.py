@@ -20,7 +20,7 @@ from labeling import _atr_series, _resolve_col, apply_triple_barrier
 
 
 class StateMatrixBuilder:
-    """Build a master state matrix from raw 15m OHLCV data."""
+    """Build a master state matrix from raw OHLCV data."""
 
     def __init__(
         self,

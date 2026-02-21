@@ -440,13 +440,13 @@ class Indicators:
     def vwap(
         self,
         data: pd.DataFrame,
-        period: int = 96,
+        period: int = 24,
         high_col: str = "high",
         low_col: str = "low",
         close_col: str = "close",
         volume_col: str = "volume",
     ) -> pd.Series:
-        """Volume Weighted Average Price (Rolling 24h default for 15m data)."""
+        """Volume Weighted Average Price (Rolling 24h default for 1h data)."""
         high = self._series(data, high_col)
         low = self._series(data, low_col)
         close = self._series(data, close_col)
@@ -519,7 +519,7 @@ class Indicators:
             "- keltner_channels(data, period=20, atr_period=10, atr_mult=2.0, price_col='close', high_col='high', low_col='low') -> (upper, lower): Keltner channels (ATR-based).\n"
             "- choppiness_index(data, period=14, high_col='high', low_col='low', close_col='close'): 0-100 choppiness regime score.\n\n"
             "Volume\n"
-            "- vwap(data, period=96, high_col='high', low_col='low', close_col='close', volume_col='volume'): Rolling VWAP (defaults to 24h on 15m data).\n"
+            "- vwap(data, period=24, high_col='high', low_col='low', close_col='close', volume_col='volume'): Rolling VWAP (defaults to 24h on 1h data).\n"
             "- obv(data, close_col='close', volume_col='volume'): On-Balance Volume.\n"
             "- cmf(data, period=20, high_col='high', low_col='low', close_col='close', volume_col='volume'): Chaikin Money Flow.\n"
         )

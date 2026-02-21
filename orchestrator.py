@@ -455,8 +455,8 @@ if __name__ == "__main__":
     # ── Test 1: Instantiation ────────────────────────────────────────────
     print("=== Test 1: Instantiation ===")
     orch = Orchestrator()
-    assert orch.data_path.name == "sol_usd_15m_3y.parquet"
-    assert orch.state_matrix_path.name == "state_matrix.parquet"
+    assert orch.data_path.name == "sol_usd_1h.parquet"
+    assert orch.state_matrix_path.name == "state_matrix_1h.parquet"
     print(f"  data_path: {orch.data_path}")
     print(f"  state_matrix_path: {orch.state_matrix_path}")
     print("  OK")
