@@ -619,7 +619,7 @@ PIPELINE START
 │   ├── HybridBuilder.build_consensus_gate()
 │   └── HybridBuilder.build_weighted_combination()
 │
-├── 6. SCIENTIST LOOP (sequential, one hybrid at a time)
+├── 6. SCIENTIST LOOP (parallel, all hybrids concurrently)
 │   ├── For each hybrid:
 │   │   ├── Backtest → diagnostics → fitness
 │   │   ├── UNVIABLE check → discard if triggered
@@ -673,7 +673,9 @@ TREND_SLOPE_THRESHOLD = 0.0005
 ### 12.4 Parallelism
 - Specialists: `asyncio.gather(return_exceptions=True)` — parallel API calls
 - One specialist crash does not kill others
-- Scientist loop: sequential (each hybrid builds on previous results)
+- Scientist loop: `asyncio.gather(return_exceptions=True)` — all 3 hybrids refined concurrently
+- One hybrid crash does not kill others
+- Inside each hybrid's loop: iterations run sequential (each depends on previous)
 
 ### 12.5 Logging
 Every stage emits structured log events consumed by Streamlit UI in real time.
