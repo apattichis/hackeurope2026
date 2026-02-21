@@ -1,0 +1,33 @@
+# Environment / secrets
+.env
+.env.*
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Data (keep data/README.md only)
+data/*.parquet
+data/*.csv
+data/*.h5
+
+# IDE
+.vscode/
+.idea/
+
+# Testing / build
+.pytest_cache/
+dist/
+build/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
