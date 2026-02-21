@@ -122,13 +122,13 @@ A single pre-computed pandas DataFrame saved as parquet. Built **once**, loaded 
 | `session` | StateMatrixBuilder | str: ASIA/LONDON/NY/OTHER |
 | `trend_regime` | StateMatrixBuilder | str: UPTREND/DOWNTREND/CONSOLIDATION |
 | `vol_regime` | StateMatrixBuilder | str: HIGH_VOL/LOW_VOL |
-| `tbm_label` | labeling.py | float: +1/-1/0/NaN |
-| `tbm_long_pnl` | labeling.py | float |
-| `tbm_long_exit_idx` | labeling.py | int |
-| `tbm_long_duration` | labeling.py | int |
-| `tbm_short_pnl` | labeling.py | float |
-| `tbm_short_exit_idx` | labeling.py | int |
-| `tbm_short_duration` | labeling.py | int |
+| `tbm_label` | core/labeling.py | float: +1/-1/0/NaN |
+| `tbm_long_pnl` | core/labeling.py | float |
+| `tbm_long_exit_idx` | core/labeling.py | int |
+| `tbm_long_duration` | core/labeling.py | int |
+| `tbm_short_pnl` | core/labeling.py | float |
+| `tbm_short_exit_idx` | core/labeling.py | int |
+| `tbm_short_duration` | core/labeling.py | int |
 
 **Index:** `open_time` (UTC datetime)
 
@@ -655,7 +655,7 @@ PIPELINE START
 
 ### 12.3 Configuration Constants
 ```python
-# config.py
+# core/config.py
 MAX_STRATEGIES_PER_SPECIALIST = 3
 MAX_GENERATION_ATTEMPTS = 3
 STRATEGY_TIMEOUT_SECONDS = 60
@@ -735,26 +735,26 @@ Per hybrid: iteration history showing Sharpe improvement, Critic diagnosis summa
 
 | File | Status | Notes |
 |---|---|---|
-| `state_builder.py` | Needs parameter updates | Update thresholds per Section 4.4 |
-| `labeling.py` | Ready | New dual-direction version |
-| `backtesting.py` | Ready | VectorizedBacktester |
-| `diagnostics.py` | Ready | Includes sufficient_evidence |
-| `whitelist_indicators.py` | Ready | Full indicator library |
-| `indicator_sampler.py` | Needs cleanup | Remove hidden indicators, replace prompt generation |
-| `strategy_base.py` | Needs update | Remove tbm_win/tbm_loss, add description |
+| `core/state_builder.py` | Needs parameter updates | Update thresholds per Section 4.4 |
+| `core/labeling.py` | Ready | New dual-direction version |
+| `core/backtesting.py` | Ready | VectorizedBacktester |
+| `core/diagnostics.py` | Ready | Includes sufficient_evidence |
+| `core/whitelist_indicators.py` | Ready | Full indicator library |
+| `pipeline/indicator_sampler.py` | Needs cleanup | Remove hidden indicators, replace prompt generation |
+| `core/strategy_base.py` | Needs update | Remove tbm_win/tbm_loss, add description |
 
 ## 16. Files to Build
 
 | File | Purpose |
 |---|---|
-| `config.py` | All constants in one place |
-| `prompt_builder.py` | Builds specialist prompts from template + sampled indicators |
-| `specialist_agent.py` | LLM call + code validation + retry logic |
-| `fitness.py` | compute_fitness() function |
-| `niche_selector.py` | Champion selection logic |
-| `hybrid_builder.py` | HybridBuilder class (all 3 templates) |
-| `critic_agent.py` | Opus Critic call + response parser |
-| `refiner_agent.py` | Sonnet Refiner call |
-| `scientist.py` | Full Scientist loop orchestration |
+| `core/config.py` | All constants in one place |
+| `pipeline/prompt_builder.py` | Builds specialist prompts from template + sampled indicators |
+| `pipeline/specialist_agent.py` | LLM call + code validation + retry logic |
+| `pipeline/fitness.py` | compute_fitness() function |
+| `pipeline/niche_selector.py` | Champion selection logic |
+| `pipeline/hybrid_builder.py` | HybridBuilder class (all 3 templates) |
+| `agents/critic_agent.py` | Opus Critic call + response parser |
+| `agents/refiner_agent.py` | Sonnet Refiner call |
+| `agents/scientist.py` | Full Scientist loop orchestration |
 | `orchestrator.py` | Main pipeline controller |
 | `app.py` | Streamlit UI |

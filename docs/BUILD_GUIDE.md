@@ -17,18 +17,18 @@ Build the Council of Alphas pipeline. The core infrastructure modules are alread
 Read these files IN THIS ORDER before writing a single line:
 
 1. `MASTER_SPEC.md` — complete specification of every decision
-2. `config.py` — all constants (read this before any other .py)
-3. `state_builder.py` — needs parameter update (see Step 1)
-4. `labeling.py` — ready, do not touch
-5. `backtesting.py` — ready, do not touch
-6. `diagnostics.py` — ready, do not touch
-7. `whitelist_indicators.py` — ready, do not touch
-8. `indicator_sampler.py` — needs cleanup (see Step 2)
-9. `strategy_base.py` — needs update (see Step 3)
+2. `core/config.py` — all constants (read this before any other .py)
+3. `core/state_builder.py` — needs parameter update (see Step 1)
+4. `core/labeling.py` — ready, do not touch
+5. `core/backtesting.py` — ready, do not touch
+6. `core/diagnostics.py` — ready, do not touch
+7. `core/whitelist_indicators.py` — ready, do not touch
+8. `pipeline/indicator_sampler.py` — needs cleanup (see Step 2)
+9. `core/strategy_base.py` — needs update (see Step 3)
 
 ---
 
-## Step 1: Update state_builder.py
+## Step 1: Update core/state_builder.py
 
 Change ONLY these default parameter values in `StateMatrixBuilder.__init__`:
 
@@ -52,7 +52,7 @@ After build, drop intermediate columns before saving parquet:
 
 ---
 
-## Step 2: Update indicator_sampler.py
+## Step 2: Update pipeline/indicator_sampler.py
 
 Remove these indicators from CATEGORIES (they are hidden from LLMs):
 - From Trend: `sma`
@@ -69,11 +69,11 @@ CATEGORIES = {
 }
 ```
 
-Remove the `generate_llm_prompts` method entirely. The sampler's only job is `sample_sets_for_category()`. Prompt building is handled by `prompt_builder.py`.
+Remove the `generate_llm_prompts` method entirely. The sampler's only job is `sample_sets_for_category()`. Prompt building is handled by `pipeline/prompt_builder.py`.
 
 ---
 
-## Step 3: Update strategy_base.py
+## Step 3: Update core/strategy_base.py
 
 ```python
 from whitelist_indicators import Indicators
@@ -98,14 +98,14 @@ class Strategy(Indicators):
         raise NotImplementedError("LLM or HybridBuilder implements this")
 ```
 
-**IMPORTANT: Remove tbm_win and tbm_loss — these are now fixed system-wide in config.py**
+**IMPORTANT: Remove tbm_win and tbm_loss — these are now fixed system-wide in core/config.py**
 
 ---
 
-## Step 4: Build config.py
+## Step 4: Build core/config.py
 
 ```python
-# config.py — Single source of truth for all constants
+# core/config.py — Single source of truth for all constants
 
 # Data
 DATA_PATH = "data/sol_usd_15m_3y.parquet"
@@ -157,7 +157,7 @@ REFINER_TEMPERATURE = 0
 
 ---
 
-## Step 5: Build fitness.py
+## Step 5: Build pipeline/fitness.py
 
 Implement `compute_fitness(diagnostics_df: pd.DataFrame) -> float`
 
@@ -215,7 +215,7 @@ def compute_fitness(diagnostics_df: pd.DataFrame) -> float:
 
 ---
 
-## Step 6: Build prompt_builder.py
+## Step 6: Build pipeline/prompt_builder.py
 
 Builds the full specialist prompt by combining:
 - Fixed template skeleton
@@ -239,7 +239,7 @@ Include family guidance from MASTER_SPEC.md Section 5.6.
 
 ---
 
-## Step 7: Build specialist_agent.py
+## Step 7: Build pipeline/specialist_agent.py
 
 Handles one strategy generation attempt for one specialist:
 
@@ -269,7 +269,7 @@ Pipeline per attempt:
 
 ---
 
-## Step 8: Build niche_selector.py
+## Step 8: Build pipeline/niche_selector.py
 
 ```python
 def select_champions(
@@ -284,7 +284,7 @@ def select_champions(
 
 ---
 
-## Step 9: Build hybrid_builder.py
+## Step 9: Build pipeline/hybrid_builder.py
 
 Three methods, all pure Python. See MASTER_SPEC Section 10 for exact logic.
 
@@ -332,7 +332,7 @@ class HybridBuilder:
 
 ---
 
-## Step 10: Build critic_agent.py
+## Step 10: Build agents/critic_agent.py
 
 ```python
 def run_critic(
@@ -357,7 +357,7 @@ Parse the structured output format exactly. If parsing fails → treat as UNVIAB
 
 ---
 
-## Step 11: Build refiner_agent.py
+## Step 11: Build agents/refiner_agent.py
 
 ```python
 def run_refiner(
@@ -372,7 +372,7 @@ def run_refiner(
 
 ---
 
-## Step 12: Build scientist.py
+## Step 12: Build agents/scientist.py
 
 Orchestrates the full refinement loop for ONE hybrid strategy:
 
@@ -440,8 +440,8 @@ Use Plotly for all charts (heatmap + PnL curves).
 
 1. **Never import from files you haven't read** — read every pre-built file before using it
 2. **Never rewrite core logic** in labeling.py, backtesting.py, diagnostics.py, whitelist_indicators.py
-3. **All constants** come from config.py — no magic numbers in code
-4. **TBM multipliers are NOT on Strategy objects** — they are in config.py only
+3. **All constants** come from core/config.py — no magic numbers in code
+4. **TBM multipliers are NOT on Strategy objects** — they are in core/config.py only
 5. **State Matrix is read-only** after build — never modify it in place
 6. **Fitness formula is exactly:** `Global_Sharpe * ln(N) * Coverage` — no deviations
 7. **Coverage is trade-weighted** — not bucket-count-weighted
@@ -462,28 +462,37 @@ council_of_alphas/
 │
 ├── docs/
 │   ├── MASTER_SPEC.md                  # Complete specification
-│   ├── ARCHITECTURE.mermaid            # Pipeline diagram
+│   ├── ARCHITECTURE.md                 # Pipeline diagram
 │   ├── BUILD_GUIDE.md                  # This file
-│   └── council_of_alphas.pdf           # Full PDF (same as MASTER_SPEC)
+│   └── Council_of_Alphas_SPEC.pdf      # Full PDF (same as MASTER_SPEC)
 │
-├── pre_built/                          # DO NOT REWRITE CORE LOGIC
-│   ├── state_builder.py                # Update parameters only
+├── core/                               # DO NOT REWRITE CORE LOGIC
+│   ├── __init__.py
+│   ├── config.py                       # Build first
+│   ├── strategy_base.py               # Update: remove tbm params, add description
+│   ├── whitelist_indicators.py         # Ready
 │   ├── labeling.py                     # Ready
 │   ├── backtesting.py                  # Ready
 │   ├── diagnostics.py                  # Ready
-│   ├── whitelist_indicators.py         # Ready
-│   ├── indicator_sampler.py            # Update categories + remove generate_llm_prompts
-│   └── strategy_base.py               # Update: remove tbm params, add description
+│   └── state_builder.py               # Update parameters only
 │
-├── config.py                           # Build first
-├── fitness.py                          # Step 5
-├── prompt_builder.py                   # Step 6
-├── specialist_agent.py                 # Step 7
-├── niche_selector.py                   # Step 8
-├── hybrid_builder.py                   # Step 9
-├── critic_agent.py                     # Step 10
-├── refiner_agent.py                    # Step 11
-├── scientist.py                        # Step 12
+├── pipeline/
+│   ├── __init__.py
+│   ├── indicator_sampler.py            # Update categories + remove generate_llm_prompts
+│   ├── fitness.py                      # Step 5
+│   ├── prompt_builder.py              # Step 6
+│   ├── niche_selector.py              # Step 8
+│   ├── hybrid_builder.py              # Step 9
+│   └── specialist_agent.py            # Step 7
+│
+├── agents/
+│   ├── __init__.py
+│   ├── critic_agent.py                # Step 10
+│   ├── refiner_agent.py               # Step 11
+│   └── scientist.py                   # Step 12
+│
+├── eda/                                # EDA notebooks
+│
 ├── orchestrator.py                     # Step 13
 └── app.py                              # Step 14 (Andreas)
 ```
@@ -493,19 +502,19 @@ council_of_alphas/
 ## Build Order (strict dependency order)
 
 ```
-1. config.py                (no dependencies)
-2. strategy_base.py         (depends on: whitelist_indicators)
-3. indicator_sampler.py     (depends on: config)
-4. fitness.py               (depends on: config)
-5. prompt_builder.py        (depends on: config, indicator_sampler, whitelist_indicators)
-6. specialist_agent.py      (depends on: config, prompt_builder, strategy_base, 
-                                         backtesting, diagnostics, fitness)
-7. niche_selector.py        (depends on: config, fitness)
-8. hybrid_builder.py        (depends on: config, strategy_base, diagnostics)
-9. critic_agent.py          (depends on: config)
-10. refiner_agent.py        (depends on: config)
-11. scientist.py            (depends on: config, backtesting, diagnostics, 
-                                         fitness, critic_agent, refiner_agent)
-12. orchestrator.py         (depends on: everything above)
-13. app.py                  (depends on: orchestrator)
+1. core/config.py                  (no dependencies)
+2. core/strategy_base.py           (depends on: core/whitelist_indicators)
+3. pipeline/indicator_sampler.py   (depends on: core/config)
+4. pipeline/fitness.py             (depends on: core/config)
+5. pipeline/prompt_builder.py      (depends on: core/config, pipeline/indicator_sampler, core/whitelist_indicators)
+6. pipeline/specialist_agent.py    (depends on: core/config, pipeline/prompt_builder, core/strategy_base,
+                                                core/backtesting, core/diagnostics, pipeline/fitness)
+7. pipeline/niche_selector.py      (depends on: core/config, pipeline/fitness)
+8. pipeline/hybrid_builder.py      (depends on: core/config, core/strategy_base, core/diagnostics)
+9. agents/critic_agent.py          (depends on: core/config)
+10. agents/refiner_agent.py        (depends on: core/config)
+11. agents/scientist.py            (depends on: core/config, core/backtesting, core/diagnostics,
+                                                pipeline/fitness, agents/critic_agent, agents/refiner_agent)
+12. orchestrator.py                (depends on: everything above)
+13. app.py                         (depends on: orchestrator)
 ```

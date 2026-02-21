@@ -8,34 +8,34 @@ You are building the Council of Alphas — an evolutionary multi-agent trading f
 
 1. **Read** `docs/MASTER_SPEC.md` — every locked decision is in here
 2. **Read** `docs/BUILD_GUIDE.md` — exact step-by-step instructions
-3. **Read** `config.py` — all constants before touching any other file
+3. **Read** `core/config.py` — all constants before touching any other file
 
 ## What Already Exists (DO NOT rewrite core logic)
 
 | File | Status | Action |
 |---|---|---|
-| `whitelist_indicators.py` | ✅ Ready | Do not touch |
-| `labeling.py` | ✅ Ready | Do not touch |
-| `backtesting.py` | ✅ Ready | Do not touch |
-| `diagnostics.py` | ✅ Ready | Do not touch |
-| `state_builder.py` | ✅ Parameters updated | Do not touch |
-| `indicator_sampler.py` | ✅ Ready | Do not touch |
-| `strategy_base.py` | ✅ Ready | Do not touch |
-| `config.py` | ✅ Ready | Do not touch |
-| `fitness.py` | ✅ Ready | Do not touch |
-| `prompt_builder.py` | ✅ Ready | Do not touch |
+| `core/whitelist_indicators.py` | ✅ Ready | Do not touch |
+| `core/labeling.py` | ✅ Ready | Do not touch |
+| `core/backtesting.py` | ✅ Ready | Do not touch |
+| `core/diagnostics.py` | ✅ Ready | Do not touch |
+| `core/state_builder.py` | ✅ Parameters updated | Do not touch |
+| `pipeline/indicator_sampler.py` | ✅ Ready | Do not touch |
+| `core/strategy_base.py` | ✅ Ready | Do not touch |
+| `core/config.py` | ✅ Ready | Do not touch |
+| `pipeline/fitness.py` | ✅ Ready | Do not touch |
+| `pipeline/prompt_builder.py` | ✅ Ready | Do not touch |
 
 ## What You Need to Build
 
 ```
-specialist_agent.py   → async strategy generation + validation + retry
-niche_selector.py     → champion selection per family
-hybrid_builder.py     → HybridBuilder (3 deterministic templates, pure Python)
-critic_agent.py       → Claude Opus evidence-locked diagnosis
-refiner_agent.py      → Claude Sonnet surgical fix application
-scientist.py          → full refinement loop (max 5 iterations)
-orchestrator.py       → main pipeline controller
-app.py                → Streamlit UI (Andreas)
+pipeline/specialist_agent.py   → async strategy generation + validation + retry
+pipeline/niche_selector.py     → champion selection per family
+pipeline/hybrid_builder.py     → HybridBuilder (3 deterministic templates, pure Python)
+agents/critic_agent.py         → Claude Opus evidence-locked diagnosis
+agents/refiner_agent.py        → Claude Sonnet surgical fix application
+agents/scientist.py            → full refinement loop (max 5 iterations)
+orchestrator.py                → main pipeline controller
+app.py                         → Streamlit UI (Andreas)
 ```
 
 ## Repo Structure
@@ -47,26 +47,36 @@ council_of_alphas/
 ├── .gitignore
 ├── README.md
 ├── requirements.txt
-│
-├── config.py
-├── strategy_base.py
-├── whitelist_indicators.py
-├── labeling.py
-├── backtesting.py
-├── diagnostics.py
-├── state_builder.py
-├── indicator_sampler.py
-├── fitness.py
-├── prompt_builder.py
-│
-├── specialist_agent.py           ← to build
-├── niche_selector.py             ← to build
-├── hybrid_builder.py             ← to build
-├── critic_agent.py               ← to build
-├── refiner_agent.py              ← to build
-├── scientist.py                  ← to build
 ├── orchestrator.py               ← to build
 ├── app.py                        ← to build
+│
+├── core/
+│   ├── __init__.py
+│   ├── config.py
+│   ├── strategy_base.py
+│   ├── whitelist_indicators.py
+│   ├── labeling.py
+│   ├── backtesting.py
+│   ├── diagnostics.py
+│   └── state_builder.py
+│
+├── pipeline/
+│   ├── __init__.py
+│   ├── indicator_sampler.py
+│   ├── fitness.py
+│   ├── prompt_builder.py
+│   ├── niche_selector.py
+│   ├── hybrid_builder.py
+│   └── specialist_agent.py       ← to build
+│
+├── agents/
+│   ├── __init__.py
+│   ├── critic_agent.py           ← to build
+│   ├── refiner_agent.py          ← to build
+│   └── scientist.py              ← to build
+│
+├── eda/
+│   └── (EDA notebooks)
 │
 ├── data/
 │   ├── README.md
@@ -83,8 +93,8 @@ council_of_alphas/
 
 ## 10 Rules That Must Never Be Broken
 
-1. All constants come from `config.py` — no magic numbers anywhere
-2. `tbm_win` and `tbm_loss` are NOT on Strategy objects — config.py only
+1. All constants come from `core/config.py` — no magic numbers anywhere
+2. `tbm_win` and `tbm_loss` are NOT on Strategy objects — core/config.py only
 3. State Matrix is read-only after build — never modify in place
 4. Fitness formula is exactly: `Global_Sharpe * ln(N) * Coverage` — no deviations
 5. Coverage is trade-weighted (by trade_count), not bucket-count-weighted
