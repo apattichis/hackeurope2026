@@ -77,7 +77,8 @@ council_of_alphas/
     ├── Council_of_Alphas_SPEC.pdf
     ├── MASTER_SPEC.md
     ├── BUILD_GUIDE.md
-    └── ARCHITECTURE.md
+    ├── ARCHITECTURE.md
+    └── RESEARCH.md
 ```
 
 ## 10 Rules That Must Never Be Broken
