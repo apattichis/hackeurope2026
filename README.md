@@ -70,7 +70,7 @@ council_of_alphas/
 │
 ├── data/
 │   ├── README.md
-│   ├── btc_usd_15m_3y.parquet
+│   ├── sol_usd_15m_3y.parquet
 │   └── state_matrix.parquet
 │
 └── docs/

@@ -17,7 +17,7 @@
 flowchart TD
 
     %% ── DATA LAYER ──────────────────────────────────────────
-    RAW["📦 Raw Binance Parquet<br>BTC-USD 15m · 3 years<br>Cols: OHLCV + quote_volume + count + taker_buy_volume"]
+    RAW["📦 Raw Binance Parquet<br>SOL-USD 15m · 3 years<br>Cols: OHLCV + quote_volume + count + taker_buy_volume"]
 
     subgraph SM["STATE MATRIX BUILD (once, cached to parquet)"]
         direction TB

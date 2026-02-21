@@ -14,7 +14,7 @@ An evolutionary multi-agent framework that prevents mode collapse in LLM strateg
 
 | Parameter | Value |
 |---|---|
-| Instrument | BTC-USD |
+| Instrument | SOL-USD |
 | Timeframe | 15-minute candles |
 | Source | Binance (parquet file) |
 | Date Range | 3 years |
@@ -589,7 +589,7 @@ No explanation. No markdown. No imports.
 PIPELINE START
 │
 ├── 1. LOAD DATA
-│   └── Load Binance BTC-USD 15m parquet
+│   └── Load Binance SOL-USD 15m parquet
 │
 ├── 2. BUILD / LOAD STATE MATRIX
 │   ├── If parquet exists → load

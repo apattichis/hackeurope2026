@@ -5,7 +5,7 @@ All other modules import from here. No magic numbers in code.
 """
 
 # ── Data ──────────────────────────────────────────────────────────────────────
-DATA_PATH = "data/btc_usd_15m_3y.parquet"
+DATA_PATH = "data/sol_usd_15m_3y.parquet"
 STATE_MATRIX_PATH = "data/state_matrix.parquet"
 
 # ── State Matrix / Regime Detection ───────────────────────────────────────────
