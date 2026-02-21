@@ -1,3 +1,6 @@
+# Architecture
+
+```mermaid
 %%{init: {
   'theme': 'base',
   'themeVariables': {
@@ -14,13 +17,13 @@
 flowchart TD
 
     %% ── DATA LAYER ──────────────────────────────────────────
-    RAW["📦 Raw Binance Parquet\nBTC-USD 15m · 3 years\nCols: OHLCV + quote_volume + count + taker_buy_volume"]
+    RAW["📦 Raw Binance Parquet<br>BTC-USD 15m · 3 years<br>Cols: OHLCV + quote_volume + count + taker_buy_volume"]
 
     subgraph SM["STATE MATRIX BUILD (once, cached to parquet)"]
         direction TB
-        REGIME["🔀 Regime Tagging\nSession: ASIA·LONDON·NY·OTHER\nTrend: SMA50 slope ±0.0005\nVol: ATR24 vs SMA20(ATR24)"]
-        TBM["🏷️ Triple Barrier Labeling\nwin=2.0×ATR · loss=1.0×ATR\nHorizon=50 bars · ATR window=24\nLabels: +1(long) · -1(short) · 0(timeout) · NaN(whipsaw)\nOutputs: tbm_label + long/short pnl/exit/duration"]
-        MATRIX["📋 State Matrix\n18 columns · 105k+ rows\nSaved as parquet"]
+        REGIME["🔀 Regime Tagging<br>Session: ASIA·LONDON·NY·OTHER<br>Trend: SMA50 slope ±0.0005<br>Vol: ATR24 vs SMA20(ATR24)"]
+        TBM["🏷️ Triple Barrier Labeling<br>win=2.0×ATR · loss=1.0×ATR<br>Horizon=50 bars · ATR window=24<br>Labels: +1(long) · -1(short) · 0(timeout) · NaN(whipsaw)<br>Outputs: tbm_label + long/short pnl/exit/duration"]
+        MATRIX["📋 State Matrix<br>18 columns · 105k+ rows<br>Saved as parquet"]
         REGIME --> TBM --> MATRIX
     end
 
@@ -30,20 +33,20 @@ flowchart TD
     subgraph S1["STAGE 1 — SPECIATION (parallel, asyncio)"]
         direction LR
 
-        SAMPLER["🎲 IndicatorSampler\nRandom subset per call\nPrevents intra-specialist\nmode collapse"]
+        SAMPLER["🎲 IndicatorSampler<br>Random subset per call<br>Prevents intra-specialist<br>mode collapse"]
 
         subgraph SPECS["4 Specialist Agents (Claude Sonnet · temp=0)"]
             direction TB
-            SP1["🧬 Trend\nema·hma·macd·adx·slope"]
-            SP2["🧬 Momentum\nrsi·cci·roc·mfi·zscore"]
-            SP3["🧬 Volatility\nnatr·bb·keltner·choppiness"]
-            SP4["🧬 Volume\nvwap·obv·cmf"]
+            SP1["🧬 Trend<br>ema·hma·macd·adx·slope"]
+            SP2["🧬 Momentum<br>rsi·cci·roc·mfi·zscore"]
+            SP3["🧬 Volatility<br>natr·bb·keltner·choppiness"]
+            SP4["🧬 Volume<br>vwap·obv·cmf"]
         end
 
-        VALIDATE["✅ Code Validation\n3 attempts max\nSyntax→Run→Type→Trades\nError feedback injected"]
-        BACKTEST1["⚡ VectorizedBacktester\nFee=0.075% · No overlaps\nNumba accelerated"]
-        DIAG1["📊 DiagnosticsEngine\n60-row bucket table\nGLOBAL·1D·2D·3D\n24 micro-buckets"]
-        FIT1["🎯 Fitness Score\nGlobal_Sharpe × ln(N) × Coverage\nCoverage = trade-weighted\nHard elim if Sharpe≤0"]
+        VALIDATE["✅ Code Validation<br>3 attempts max<br>Syntax→Run→Type→Trades<br>Error feedback injected"]
+        BACKTEST1["⚡ VectorizedBacktester<br>Fee=0.075% · No overlaps<br>Numba accelerated"]
+        DIAG1["📊 DiagnosticsEngine<br>60-row bucket table<br>GLOBAL·1D·2D·3D<br>24 micro-buckets"]
+        FIT1["🎯 Fitness Score<br>Global_Sharpe × ln(N) × Coverage<br>Coverage = trade-weighted<br>Hard elim if Sharpe≤0"]
 
         SAMPLER --> SPECS
         SPECS --> VALIDATE --> BACKTEST1 --> DIAG1 --> FIT1
@@ -54,8 +57,8 @@ flowchart TD
     %% ── STAGE 2: NICHE SELECTION ─────────────────────────────
     subgraph S2["STAGE 2 — NICHE SELECTION"]
         direction LR
-        RANK["🏆 Rank per Family\nTop 1 per family\nThreshold: score > 0"]
-        CHAMPS["👑 Champions\nUp to 4 survivors\nOne per family"]
+        RANK["🏆 Rank per Family<br>Top 1 per family<br>Threshold: score > 0"]
+        CHAMPS["👑 Champions<br>Up to 4 survivors<br>One per family"]
         RANK --> CHAMPS
     end
 
@@ -64,9 +67,9 @@ flowchart TD
     %% ── STAGE 3: HYBRID BUILDING ─────────────────────────────
     subgraph S3["STAGE 3 — HYBRID BUILDING (pure Python · no LLM)"]
         direction LR
-        H1["🔀 Hybrid 1\nRegime Router\nArgmax Sharpe per\n24 regime buckets"]
-        H2["🗳️ Hybrid 2\nConsensus Gate\n3/4 champions must\nagree on direction"]
-        H3["⚖️ Hybrid 3\nWeighted Combination\nFitness-score weighted\nsignal sum"]
+        H1["🔀 Hybrid 1<br>Regime Router<br>Argmax Sharpe per<br>24 regime buckets"]
+        H2["🗳️ Hybrid 2<br>Consensus Gate<br>3/4 champions must<br>agree on direction"]
+        H3["⚖️ Hybrid 3<br>Weighted Combination<br>Fitness-score weighted<br>signal sum"]
     end
 
     S2 --> S3
@@ -74,14 +77,14 @@ flowchart TD
     %% ── STAGE 4: SCIENTIST LOOP ──────────────────────────────
     subgraph S4["STAGE 4 — SCIENTIST LOOP (per hybrid · max 5 iterations)"]
         direction TB
-        BT2["⚡ Backtest +\nDiagnostics +\nFitness"]
-        CRITIC["🔬 Critic\nClaude Opus · temp=0\nEvidence-locked\nCites exact buckets"]
+        BT2["⚡ Backtest +<br>Diagnostics +<br>Fitness"]
+        CRITIC["🔬 Critic<br>Claude Opus · temp=0<br>Evidence-locked<br>Cites exact buckets"]
         VERDICT{"VERDICT?"}
-        REFINER["🔧 Refiner\nClaude Sonnet · temp=0\nOne surgical fix only"]
-        VGATE{"Validation\nGate"}
-        UNVIABLE["❌ UNVIABLE\nDiscard hybrid"]
-        KEEP["💾 Keep best\nversion"]
-        EARLY["⏹️ Early exit\n2× improvement\n< 0.05 Sharpe"]
+        REFINER["🔧 Refiner<br>Claude Sonnet · temp=0<br>One surgical fix only"]
+        VGATE{"Validation<br>Gate"}
+        UNVIABLE["❌ UNVIABLE<br>Discard hybrid"]
+        KEEP["💾 Keep best<br>version"]
+        EARLY["⏹️ Early exit<br>2× improvement<br>< 0.05 Sharpe"]
 
         BT2 --> CRITIC --> VERDICT
         VERDICT -->|UNVIABLE| UNVIABLE
@@ -95,13 +98,13 @@ flowchart TD
     S3 --> S4
 
     %% ── FALLBACK ─────────────────────────────────────────────
-    FALLBACK["⚠️ Fallback\nBest champion\nif all hybrids\nUNVIABLE"]
+    FALLBACK["⚠️ Fallback<br>Best champion<br>if all hybrids<br>UNVIABLE"]
 
     S4 -->|all UNVIABLE| FALLBACK
 
     %% ── FINAL RANKING ────────────────────────────────────────
     subgraph RANK2["FINAL RANKING"]
-        SCORE["🎯 Re-score survivors\nSame fitness formula"]
+        SCORE["🎯 Re-score survivors<br>Same fitness formula"]
         PODIUM["🏅 Ranked Final Alphas"]
         SCORE --> PODIUM
     end
@@ -112,19 +115,19 @@ flowchart TD
     %% ── UI ───────────────────────────────────────────────────
     subgraph UI["STREAMLIT DASHBOARD (Andreas)"]
         direction LR
-        P1["📡 Panel 1\nLive Pipeline Log"]
-        P2["📊 Panel 2\nChampion Leaderboard\n+ Win Rate"]
-        P3["🌡️ Panel 3\nDiagnostics Heatmap\n(Plotly)"]
-        P4["🔬 Panel 4\nScientist Loop Trace"]
-        P5["🏆 Panel 5\nFinal Results\nLineage + PnL Chart"]
+        P1["📡 Panel 1<br>Live Pipeline Log"]
+        P2["📊 Panel 2<br>Champion Leaderboard<br>+ Win Rate"]
+        P3["🌡️ Panel 3<br>Diagnostics Heatmap<br>(Plotly)"]
+        P4["🔬 Panel 4<br>Scientist Loop Trace"]
+        P5["🏆 Panel 5<br>Final Results<br>Lineage + PnL Chart"]
     end
 
     RANK2 --> UI
 
     %% ── MODEL LABELS ─────────────────────────────────────────
-    SONNET["Claude Sonnet\nSpecialists + Refiner\ntemp=0"]
-    OPUS["Claude Opus\nCritic only\ntemp=0"]
-    PYTHON["Pure Python\nHybridBuilder\nNo LLM"]
+    SONNET["Claude Sonnet<br>Specialists + Refiner<br>temp=0"]
+    OPUS["Claude Opus<br>Critic only<br>temp=0"]
+    PYTHON["Pure Python<br>HybridBuilder<br>No LLM"]
 
     %% ── STYLING ──────────────────────────────────────────────
     classDef dataNode fill:#0f3460,stroke:#e94560,stroke-width:2px,color:#fff
@@ -137,3 +140,4 @@ flowchart TD
     class P1,P2,P3,P4,P5 outputNode
     class UNVIABLE,FALLBACK warningNode
     class SONNET,OPUS,PYTHON modelTag
+```
