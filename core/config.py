@@ -16,13 +16,13 @@ ATR_WINDOW = 24                      # 24 bars = 6 hours on 15m
 VOL_SMA_WINDOW = 20
 
 # ── Triple Barrier (fixed system-wide — NOT on Strategy objects) ───────────────
-TBM_WIN = 2.0                        # Take Profit = entry + 2.0 × ATR
-TBM_LOSS = 1.0                       # Stop Loss   = entry - 1.0 × ATR
-TBM_TIME_HORIZON = 50                # Max 50 bars (~12.5 hours)
+TBM_WIN = 3.0                        # Take Profit = entry + 3.0 × ATR
+TBM_LOSS = 1.5                       # Stop Loss   = entry - 1.5 × ATR
+TBM_TIME_HORIZON = 32                # Max 32 bars (~8 hours)
 TBM_TIE_BREAK = "stop_first"        # Worst-case on whipsaw
 
 # ── Backtesting ────────────────────────────────────────────────────────────────
-BACKTEST_FEE = 0.00075              # 0.075% Binance taker fee
+BACKTEST_FEE = 0.00075              # 0.075% Binance maker fee
 
 # ── Diagnostics ────────────────────────────────────────────────────────────────
 MIN_TRADES_SUFFICIENT_EVIDENCE = 30
@@ -44,7 +44,7 @@ FAMILY_INDICATORS = {
 }
 
 # ── Niche Selection ────────────────────────────────────────────────────────────
-MIN_FITNESS_THRESHOLD = 0.0          # Must pass hard eliminations (Sharpe > 0)
+MIN_FITNESS_THRESHOLD = -999.0       # Only filter truly broken strategies (-999)
 
 # ── Scientist Loop ─────────────────────────────────────────────────────────────
 MAX_SCIENTIST_ITERATIONS = 5

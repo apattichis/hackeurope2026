@@ -35,7 +35,7 @@ def compute_fitness(diagnostics_df: pd.DataFrame) -> float:
 
     Hard Elimination Conditions (return -999.0):
     - GLOBAL row has sufficient_evidence == False
-    - GLOBAL Sharpe <= 0
+    - GLOBAL Sharpe is NaN
     - No valid 3D buckets with sufficient_evidence == True
     """
 
@@ -50,7 +50,7 @@ def compute_fitness(diagnostics_df: pd.DataFrame) -> float:
     if not global_row["sufficient_evidence"]:
         return -999.0
 
-    if pd.isna(global_row["sharpe"]) or global_row["sharpe"] <= 0:
+    if pd.isna(global_row["sharpe"]):
         return -999.0
 
     # ── 3. Get 3D sufficient_evidence buckets ─────────────────────────────────

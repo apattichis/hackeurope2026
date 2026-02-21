@@ -385,9 +385,10 @@ Measures what fraction of actual trades occur in profitable regimes. Trade-weigh
 ### 8.3 Hard Eliminations (return -999 before scoring)
 ```python
 if global_row.sufficient_evidence == False: return -999
-if global_row.sharpe <= 0: return -999
+if isnan(global_row.sharpe): return -999
 if len(active_3d_buckets) == 0: return -999
 ```
+Note: Negative Sharpe is allowed through — strategies with Sharpe between -0.5 and 0 can compete and be improved by the Scientist loop. The is_unviable() gate (Sharpe < -0.5) catches truly hopeless strategies before wasting API calls.
 
 ### 8.4 Why This Formula Works
 - **Global_Sharpe** gates: is this strategy actually profitable risk-adjusted?

@@ -141,7 +141,7 @@ MAX_INDICATORS = 4
 # (no additional constants — formula is Global_Sharpe * ln(N) * Coverage)
 
 # Niche Selection
-MIN_FITNESS_THRESHOLD = 0.0  # must pass hard eliminations only
+MIN_FITNESS_THRESHOLD = -999.0  # only filter truly broken strategies (-999)
 
 # Scientist
 MAX_SCIENTIST_ITERATIONS = 5
@@ -184,7 +184,7 @@ def compute_fitness(diagnostics_df: pd.DataFrame) -> float:
     # 2. Hard eliminations
     if not global_row["sufficient_evidence"]:
         return -999.0
-    if global_row["sharpe"] <= 0:
+    if pd.isna(global_row["sharpe"]):
         return -999.0
     
     # 3. Get active 3D buckets
