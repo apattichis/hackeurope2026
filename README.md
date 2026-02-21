@@ -38,6 +38,48 @@ orchestrator.py       → main pipeline controller
 app.py                → Streamlit UI (Andreas)
 ```
 
+## Repo Structure
+
+```
+council_of_alphas/
+│
+├── .env
+├── .gitignore
+├── README.md
+├── requirements.txt
+│
+├── config.py
+├── strategy_base.py
+├── whitelist_indicators.py
+├── labeling.py
+├── backtesting.py
+├── diagnostics.py
+├── state_builder.py
+├── indicator_sampler.py
+├── fitness.py
+├── prompt_builder.py
+│
+├── specialist_agent.py           ← to build
+├── niche_selector.py             ← to build
+├── hybrid_builder.py             ← to build
+├── critic_agent.py               ← to build
+├── refiner_agent.py              ← to build
+├── scientist.py                  ← to build
+├── orchestrator.py               ← to build
+├── app.py                        ← to build
+│
+├── data/
+│   ├── README.md
+│   ├── btc_usd_15m_3y.parquet
+│   └── state_matrix.parquet
+│
+└── docs/
+    ├── Council_of_Alphas_SPEC.pdf
+    ├── MASTER_SPEC.md
+    ├── BUILD_GUIDE.md
+    └── ARCHITECTURE.mermaid
+```
+
 ## 10 Rules That Must Never Be Broken
 
 1. All constants come from `config.py` — no magic numbers anywhere
