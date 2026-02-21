@@ -83,7 +83,10 @@ def _evaluate_strategy(
     backtester = VectorizedBacktester(fee=BACKTEST_FEE)
     trade_log = backtester.run(df, "_signal")
 
-    engine = DiagnosticsEngine(min_trades=MIN_TRADES_SUFFICIENT_EVIDENCE)
+    engine = DiagnosticsEngine(
+        min_trades=MIN_TRADES_SUFFICIENT_EVIDENCE,
+        state_matrix=state_matrix,
+    )
     diagnostics = engine.compute(trade_log)
 
     fitness = compute_fitness(diagnostics)

@@ -38,11 +38,17 @@ class DiagnosticsEngine:
         win_col: Optional[str] = None,
         order_col: Optional[str] = None,
         min_trades: int = 30,
+        state_matrix: Optional[pd.DataFrame] = None,
+        long_outcome_col: str = "tbm_long_outcome",
+        short_outcome_col: str = "tbm_short_outcome",
     ) -> None:
         self.return_col = return_col
         self.win_col = win_col
         self.order_col = order_col
         self.min_trades = int(min_trades)
+        self.state_matrix = state_matrix
+        self.long_outcome_col = long_outcome_col
+        self.short_outcome_col = short_outcome_col
 
     def compute(self, trades: pd.DataFrame) -> pd.DataFrame:
         """Return hierarchical diagnostics table for the provided trades DataFrame."""
@@ -72,12 +78,21 @@ class DiagnosticsEngine:
 
         ret_col = self._resolve_return_col(df)
         df["__ret__"] = pd.to_numeric(df[ret_col], errors="coerce")
-
-        if self.win_col and self.win_col in df.columns:
-            df["__win__"] = df[self.win_col].astype(bool)
-        else:
-            df["__win__"] = df["__ret__"] > 0.0
         df["__loss__"] = df["__ret__"] < 0.0
+
+        if self.state_matrix is not None:
+            outcome = self._lookup_trade_outcomes(df)
+            df["__outcome__"] = outcome
+            df["__hit_tp__"] = df["__outcome__"] == "TP"
+            df["__hit_sl__"] = df["__outcome__"] == "SL"
+            df["__win__"] = df["__hit_tp__"]
+        else:
+            if self.win_col and self.win_col in df.columns:
+                df["__win__"] = df[self.win_col].astype(bool)
+            else:
+                df["__win__"] = df["__ret__"] > 0.0
+            df["__hit_tp__"] = df["__win__"]
+            df["__hit_sl__"] = (~df["__win__"]) & df["__ret__"].notna()
 
         order_col = self._resolve_order_col(df)
         if order_col is not None:
@@ -127,10 +142,16 @@ class DiagnosticsEngine:
     def _aggregate_group(self, grouped: pd.core.groupby.DataFrameGroupBy) -> pd.DataFrame:
         stats = grouped.agg(
             trade_count=("__ret__", "size"),
-            win_rate=("__win__", "mean"),
+            tp_hits=("__hit_tp__", "sum"),
+            sl_hits=("__hit_sl__", "sum"),
             ret_mean=("__ret__", "mean"),
             ret_std=("__ret__", lambda s: s.std(ddof=0)),
         )
+        scored_hits = stats["tp_hits"] + stats["sl_hits"]
+        with np.errstate(divide="ignore", invalid="ignore"):
+            win_rate = stats["tp_hits"] / scored_hits
+        win_rate[scored_hits <= 0] = np.nan
+        stats["win_rate"] = win_rate
 
         with np.errstate(divide="ignore", invalid="ignore"):
             sharpe = stats["ret_mean"] / stats["ret_std"]
@@ -139,7 +160,7 @@ class DiagnosticsEngine:
 
         loss_streaks = grouped["__loss__"].apply(self._max_consecutive_true).rename("max_consecutive_losses")
         out = stats.join(loss_streaks)
-        return out.drop(columns=["ret_mean", "ret_std"])
+        return out.drop(columns=["ret_mean", "ret_std", "tp_hits", "sl_hits"])
 
     @staticmethod
     def _max_consecutive_true(values: Iterable[bool]) -> int:
@@ -177,6 +198,42 @@ class DiagnosticsEngine:
             if candidate in df.columns:
                 return candidate
         return None
+
+    def _lookup_trade_outcomes(self, trades: pd.DataFrame) -> pd.Series:
+        if self.state_matrix is None:
+            raise ValueError("state_matrix is required to map TBM trade outcomes")
+
+        for col in (self.long_outcome_col, self.short_outcome_col):
+            if col not in self.state_matrix.columns:
+                raise ValueError(
+                    f"State matrix missing '{col}'. Rebuild state matrix with updated labeling output."
+                )
+        for col in ("entry_index", "side"):
+            if col not in trades.columns:
+                raise ValueError(
+                    f"Trade log missing '{col}', required for TP/SL outcome mapping."
+                )
+
+        long_outcomes = self.state_matrix[self.long_outcome_col].astype(str).to_numpy(copy=False)
+        short_outcomes = self.state_matrix[self.short_outcome_col].astype(str).to_numpy(copy=False)
+
+        entry_vals = pd.to_numeric(trades["entry_index"], errors="coerce").to_numpy(dtype=np.float64)
+        side_vals = pd.to_numeric(trades["side"], errors="coerce").to_numpy(dtype=np.float64)
+
+        outcomes = np.full(len(trades), "TIMEOUT", dtype=object)
+        valid_idx = np.isfinite(entry_vals)
+        valid_idx &= entry_vals >= 0
+        valid_idx &= entry_vals < len(long_outcomes)
+
+        long_mask = valid_idx & (side_vals == 1.0)
+        short_mask = valid_idx & (side_vals == -1.0)
+
+        if long_mask.any():
+            outcomes[long_mask] = long_outcomes[entry_vals[long_mask].astype(np.int64)]
+        if short_mask.any():
+            outcomes[short_mask] = short_outcomes[entry_vals[short_mask].astype(np.int64)]
+
+        return pd.Series(outcomes, index=trades.index, dtype="object")
 
 
 __all__ = ["DiagnosticsEngine"]

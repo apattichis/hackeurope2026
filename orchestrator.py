@@ -182,15 +182,22 @@ class Orchestrator:
 
     def _load_or_build_state_matrix(self, raw_df: pd.DataFrame) -> pd.DataFrame:
         """Load state matrix from parquet if exists, else build and save."""
+        required_cols = {"tbm_long_outcome", "tbm_short_outcome"}
         if self.state_matrix_path.exists():
             state_matrix = pd.read_parquet(self.state_matrix_path)
-            logger.info(
-                f"Loaded state matrix: {len(state_matrix):,} rows "
-                f"from {self.state_matrix_path.name}"
+            missing = required_cols - set(state_matrix.columns)
+            if not missing:
+                logger.info(
+                    f"Loaded state matrix: {len(state_matrix):,} rows "
+                    f"from {self.state_matrix_path.name}"
+                )
+                return state_matrix
+            logger.warning(
+                f"State matrix missing required TBM outcome columns {sorted(missing)}. "
+                "Rebuilding state matrix from raw data."
             )
-            return state_matrix
 
-        logger.info("State matrix not found - building from raw data...")
+        logger.info("Building state matrix from raw data...")
         builder = StateMatrixBuilder()
         state_matrix = builder.build(raw_df)
 

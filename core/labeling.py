@@ -53,7 +53,17 @@ def _tbm_core_py(
     loss: float,
     time_horizon: int,
     stop_first: bool,
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+) -> Tuple[
+    np.ndarray,
+    np.ndarray,
+    np.ndarray,
+    np.ndarray,
+    np.ndarray,
+    np.ndarray,
+    np.ndarray,
+    np.ndarray,
+    np.ndarray,
+]:
     n = close.shape[0]
     
     # Pre-allocate Oracle label
@@ -63,10 +73,12 @@ def _tbm_core_py(
     l_pnl = np.full(n, np.nan, dtype=np.float64)
     l_exit = np.full(n, -1, dtype=np.int64)
     l_dur = np.full(n, -1, dtype=np.int32)
+    l_status_arr = np.zeros(n, dtype=np.int8)
     
     s_pnl = np.full(n, np.nan, dtype=np.float64)
     s_exit = np.full(n, -1, dtype=np.int64)
     s_dur = np.full(n, -1, dtype=np.int32)
+    s_status_arr = np.zeros(n, dtype=np.int8)
 
     for idx in range(n):
         atr_now = atr_val[idx]
@@ -156,12 +168,14 @@ def _tbm_core_py(
         l_pnl[idx] = cur_l_pnl
         l_exit[idx] = idx + cur_l_dur
         l_dur[idx] = cur_l_dur
+        l_status_arr[idx] = long_status
         
         s_pnl[idx] = cur_s_pnl
         s_exit[idx] = idx + cur_s_dur
         s_dur[idx] = cur_s_dur
+        s_status_arr[idx] = short_status
 
-    return labels, l_pnl, l_exit, l_dur, s_pnl, s_exit, s_dur
+    return labels, l_pnl, l_exit, l_dur, s_pnl, s_exit, s_dur, l_status_arr, s_status_arr
 
 
 if _NUMBA_AVAILABLE:
@@ -176,24 +190,38 @@ if _NUMBA_AVAILABLE:
         loss: float,
         time_horizon: int,
         stop_first: bool,
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    ) -> Tuple[
+        np.ndarray,
+        np.ndarray,
+        np.ndarray,
+        np.ndarray,
+        np.ndarray,
+        np.ndarray,
+        np.ndarray,
+        np.ndarray,
+        np.ndarray,
+    ]:
         n = close.shape[0]
         
         labels = np.zeros(n, dtype=np.float64)
         l_pnl = np.empty(n, dtype=np.float64)
         l_exit = np.empty(n, dtype=np.int64)
         l_dur = np.empty(n, dtype=np.int32)
+        l_status_arr = np.empty(n, dtype=np.int8)
         s_pnl = np.empty(n, dtype=np.float64)
         s_exit = np.empty(n, dtype=np.int64)
         s_dur = np.empty(n, dtype=np.int32)
+        s_status_arr = np.empty(n, dtype=np.int8)
 
         for k in range(n):
             l_pnl[k] = np.nan
             l_exit[k] = -1
             l_dur[k] = -1
+            l_status_arr[k] = 0
             s_pnl[k] = np.nan
             s_exit[k] = -1
             s_dur[k] = -1
+            s_status_arr[k] = 0
 
         for idx in range(n):
             atr_now = atr_val[idx]
@@ -279,12 +307,14 @@ if _NUMBA_AVAILABLE:
             l_pnl[idx] = cur_l_pnl
             l_exit[idx] = idx + cur_l_dur
             l_dur[idx] = cur_l_dur
+            l_status_arr[idx] = long_status
             
             s_pnl[idx] = cur_s_pnl
             s_exit[idx] = idx + cur_s_dur
             s_dur[idx] = cur_s_dur
+            s_status_arr[idx] = short_status
 
-        return labels, l_pnl, l_exit, l_dur, s_pnl, s_exit, s_dur
+        return labels, l_pnl, l_exit, l_dur, s_pnl, s_exit, s_dur, l_status_arr, s_status_arr
 
 
 def apply_triple_barrier(
@@ -326,12 +356,12 @@ def apply_triple_barrier(
     stop_first = tie_break == "stop_first"
 
     if _NUMBA_AVAILABLE:
-        labels, l_pnl, l_exit, l_dur, s_pnl, s_exit, s_dur = _tbm_core_nb(  # type: ignore[misc]
+        labels, l_pnl, l_exit, l_dur, s_pnl, s_exit, s_dur, l_status_arr, s_status_arr = _tbm_core_nb(  # type: ignore[misc]
             close_arr, high_arr, low_arr, atr_arr,
             float(win), float(loss), int(time_horizon), stop_first
         )
     else:
-        labels, l_pnl, l_exit, l_dur, s_pnl, s_exit, s_dur = _tbm_core_py(
+        labels, l_pnl, l_exit, l_dur, s_pnl, s_exit, s_dur, l_status_arr, s_status_arr = _tbm_core_py(
             close_arr, high_arr, low_arr, atr_arr,
             float(win), float(loss), int(time_horizon), stop_first
         )
@@ -343,11 +373,25 @@ def apply_triple_barrier(
     out["tbm_long_pnl"] = l_pnl.astype(np.float64)
     out["tbm_long_exit_idx"] = l_exit.astype(np.int64)
     out["tbm_long_duration"] = l_dur.astype(np.int32)
+    long_outcome = np.full(len(l_status_arr), "TIMEOUT", dtype=object)
+    long_outcome[l_status_arr == 1] = "TP"
+    long_outcome[(l_status_arr == -1) | (l_status_arr == 2)] = "SL"
+    out["tbm_long_outcome"] = pd.Categorical(
+        long_outcome,
+        categories=["TP", "SL", "TIMEOUT"],
+    )
     
     # Output Fully Resolved Short Path
     out["tbm_short_pnl"] = s_pnl.astype(np.float64)
     out["tbm_short_exit_idx"] = s_exit.astype(np.int64)
     out["tbm_short_duration"] = s_dur.astype(np.int32)
+    short_outcome = np.full(len(s_status_arr), "TIMEOUT", dtype=object)
+    short_outcome[s_status_arr == 1] = "TP"
+    short_outcome[(s_status_arr == -1) | (s_status_arr == 2)] = "SL"
+    out["tbm_short_outcome"] = pd.Categorical(
+        short_outcome,
+        categories=["TP", "SL", "TIMEOUT"],
+    )
     
     return out
 

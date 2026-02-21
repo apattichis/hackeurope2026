@@ -244,9 +244,11 @@ class StateMatrixBuilder:
             "tbm_long_pnl",
             "tbm_long_exit_idx",
             "tbm_long_duration",
+            "tbm_long_outcome",
             "tbm_short_pnl",
             "tbm_short_exit_idx",
             "tbm_short_duration",
+            "tbm_short_outcome",
         ]
         existing = [c for c in ordered if c in out.columns]
         return out[existing]

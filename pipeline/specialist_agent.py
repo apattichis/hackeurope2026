@@ -250,7 +250,10 @@ async def generate_one_strategy(
         trade_log = backtester.run(df, "_signal")
 
         # 7. Diagnostics
-        engine = DiagnosticsEngine(min_trades=MIN_TRADES_SUFFICIENT_EVIDENCE)
+        engine = DiagnosticsEngine(
+            min_trades=MIN_TRADES_SUFFICIENT_EVIDENCE,
+            state_matrix=state_matrix,
+        )
         diagnostics = engine.compute(trade_log)
 
         # 8. Fitness
@@ -480,7 +483,10 @@ if __name__ == "__main__":
     print(f"  Backtest: OK ({len(trade_log)} trades)")
 
     # ── Test 5: Diagnostics ───────────────────────────────────────────────
-    engine = DiagnosticsEngine(min_trades=MIN_TRADES_SUFFICIENT_EVIDENCE)
+    engine = DiagnosticsEngine(
+        min_trades=MIN_TRADES_SUFFICIENT_EVIDENCE,
+        state_matrix=state_matrix,
+    )
     diagnostics = engine.compute(trade_log)
     expected_granularities = {"GLOBAL", "1D", "2D", "3D"}
     actual_granularities = set(diagnostics["granularity"].unique())
