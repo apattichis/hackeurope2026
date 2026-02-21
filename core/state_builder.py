@@ -223,7 +223,6 @@ class StateMatrixBuilder:
         tmp_cols = [
             "sma_50",
             "sma_50_slope_3",
-            atr_col,
             f"{atr_col}_SMA_{self.vol_sma_window}",
         ]
         out = out.drop(columns=[c for c in tmp_cols if c in out.columns], errors="ignore")
@@ -240,6 +239,7 @@ class StateMatrixBuilder:
             "session",
             "trend_regime",
             "vol_regime",
+            atr_col,
             "tbm_label",
             "tbm_long_pnl",
             "tbm_long_exit_idx",
