@@ -19,10 +19,10 @@ Council of Alphas is an evolutionary multi-agent framework that addresses both t
 
 ```mermaid
 flowchart LR
-    A["12 Strategies\n(3 per family)"] --> B["4 Champions\n(1 per family)"]
+    A["12 Strategies<br>(3 per family)"] --> B["4 Champions<br>(1 per family)"]
     B --> C["3 Hybrids"]
     C --> D["Regime Filter"]
-    D --> E["Ranked\nSurvivors"]
+    D --> E["Ranked<br>Survivors"]
 
     style A fill:#1e3a5f,stroke:#3b82f6,color:#e2e8f0
     style B fill:#1e3a5f,stroke:#3b82f6,color:#e2e8f0
