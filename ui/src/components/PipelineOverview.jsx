@@ -37,7 +37,7 @@ function StageCard({ number, title, subtitle, children, accent }) {
 
 function Arrow() {
   return (
-    <div className="flex items-center justify-center flex-shrink-0 px-0.5">
+    <div className="hidden sm:flex items-center justify-center flex-shrink-0 px-0.5">
       <svg width="16" height="16" viewBox="0 0 16 16" className="text-slate-700">
         <path d="M6 3l5 5-5 5" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
@@ -82,7 +82,7 @@ export default function PipelineOverview() {
       {/* Pipeline flow */}
       <div>
         <h2 className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-3">Pipeline Architecture</h2>
-        <div className="flex items-stretch gap-0.5">
+        <div className="flex flex-col sm:flex-row items-stretch gap-2 sm:gap-0.5">
 
           <StageCard number={1} title="12 Strategies Generated" subtitle="3 per family, Claude Opus temp=0">
             <div className="flex flex-wrap gap-1">
@@ -149,7 +149,7 @@ export default function PipelineOverview() {
       {/* Config details */}
       <div>
         <h2 className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-3">Configuration</h2>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 
           {/* Triple Barrier */}
           <div className="bg-slate-900/40 border border-slate-800/60 rounded-lg p-4">

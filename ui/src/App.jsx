@@ -145,20 +145,20 @@ export default function App() {
 
       {/* Top bar */}
       <header className="sticky top-0 z-50 bg-slate-950/95 backdrop-blur-sm border-b border-slate-800">
-        <div className="max-w-[1400px] mx-auto px-6 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             <span className="text-xl font-bold select-none flex items-center" style={{ fontFamily: 'serif', background: 'linear-gradient(135deg, #60a5fa, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', lineHeight: 1 }}>α</span>
             <h1 className="text-lg font-bold text-white tracking-tight leading-none">Council of Alphas</h1>
-            <span className="text-xs text-slate-500 font-mono border border-slate-700 rounded px-2 py-0.5">
+            <span className="text-xs text-slate-500 font-mono border border-slate-700 rounded px-2 py-0.5 hidden sm:inline">
               HackEurope 2026
             </span>
           </div>
-          <nav className="flex gap-1">
+          <nav className="flex gap-1 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0 no-scrollbar">
             {TABS.map(tab => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-3 py-1.5 text-sm rounded-md transition-all duration-200 ${
+                className={`px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm rounded-md transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
                   activeTab === tab.id
                     ? 'bg-blue-600 text-white font-medium shadow-lg shadow-blue-600/20'
                     : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
@@ -172,7 +172,7 @@ export default function App() {
       </header>
 
       {/* Content */}
-      <main className="max-w-[1400px] mx-auto px-6 py-6">
+      <main className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6">
         {activeTab === 'pipeline' && <PipelineOverview />}
         {activeTab === 'lineage' && <LineageTree />}
         {activeTab === 'regimes' && <RegimeExplainer />}
@@ -183,8 +183,8 @@ export default function App() {
 
       {/* Footer */}
       <footer className="border-t border-slate-800 mt-12">
-        <div className="max-w-[1400px] mx-auto px-6 py-4 flex items-center justify-between text-xs text-slate-600">
-          <span className="flex items-center gap-2">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-600">
+          <span className="flex items-center gap-2 flex-wrap justify-center sm:justify-start">
             Team: The Greeks (<a href="https://github.com/apattichis" target="_blank" rel="noopener noreferrer" className="text-slate-500 hover:text-slate-300 transition-colors underline underline-offset-2">Andreas</a> + <a href="https://github.com/MarkosMarkides" target="_blank" rel="noopener noreferrer" className="text-slate-500 hover:text-slate-300 transition-colors underline underline-offset-2">Markos</a>)
             <a href="https://github.com/apattichis/hackeurope2026" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-slate-500 hover:text-slate-300 transition-colors underline underline-offset-2">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>

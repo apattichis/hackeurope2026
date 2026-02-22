@@ -56,7 +56,7 @@ export default function CorrelationMatrix() {
   const offDiagonalValue = matrix[0][1];
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-6">
+    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 sm:p-6">
       {/* Header */}
       <div className="mb-8">
         <h2 className="text-2xl font-bold text-slate-100 tracking-tight">
@@ -70,8 +70,8 @@ export default function CorrelationMatrix() {
       {/* Main content: matrix + analysis */}
       <div className="flex flex-col lg:flex-row gap-6 mb-6">
         {/* Correlation Matrix Visual */}
-        <div className="flex-shrink-0">
-          <div className="bg-slate-900 border border-slate-700 rounded-xl p-6">
+        <div className="flex-shrink-0 overflow-x-auto">
+          <div className="bg-slate-900 border border-slate-700 rounded-xl p-4 sm:p-6">
             <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-5">
               Correlation Matrix
             </h3>
@@ -81,15 +81,15 @@ export default function CorrelationMatrix() {
               {/* Top-left spacer + row labels column */}
               <div className="flex flex-col">
                 {/* Spacer for header row */}
-                <div className="h-16 w-36" />
+                <div className="h-10 sm:h-16 w-20 sm:w-36" />
                 {strategies.map((rowLabel) => (
                   <div
                     key={rowLabel}
-                    className="w-36 h-20 flex items-center justify-end pr-3"
+                    className="w-20 sm:w-36 h-14 sm:h-20 flex items-center justify-end pr-1.5 sm:pr-3"
                   >
                     <span
-                      className="text-xs text-slate-400 text-right leading-tight"
-                      style={{ maxWidth: '8rem' }}
+                      className="text-[9px] sm:text-xs text-slate-400 text-right leading-tight"
+                      style={{ maxWidth: '4.5rem' }}
                     >
                       {rowLabel}
                     </span>
@@ -104,9 +104,9 @@ export default function CorrelationMatrix() {
                   {strategies.map((colLabel) => (
                     <div
                       key={colLabel}
-                      className="w-32 h-16 flex items-end justify-center pb-2 px-1"
+                      className="w-20 sm:w-32 h-10 sm:h-16 flex items-end justify-center pb-1.5 sm:pb-2 px-0.5 sm:px-1"
                     >
-                      <span className="text-xs text-slate-400 text-center leading-tight">
+                      <span className="text-[9px] sm:text-xs text-slate-400 text-center leading-tight">
                         {colLabel}
                       </span>
                     </div>
@@ -126,18 +126,18 @@ export default function CorrelationMatrix() {
                       return (
                         <div
                           key={colIdx}
-                          className="w-32 h-20 flex flex-col items-center justify-center rounded-lg m-0.5 cursor-default transition-all duration-150 border border-slate-700/50"
+                          className="w-20 sm:w-32 h-14 sm:h-20 flex flex-col items-center justify-center rounded-lg m-0.5 cursor-default transition-all duration-150 border border-slate-700/50"
                           style={cellStyle}
                           onMouseEnter={() =>
                             setHoveredCell({ row: rowIdx, col: colIdx })
                           }
                           onMouseLeave={() => setHoveredCell(null)}
                         >
-                          <span className="font-mono text-lg font-semibold">
+                          <span className="font-mono text-sm sm:text-lg font-semibold">
                             {value.toFixed(2)}
                           </span>
                           {rowIdx === colIdx && (
-                            <span className="text-xs text-blue-200 mt-0.5 opacity-70">
+                            <span className="text-[10px] sm:text-xs text-blue-200 mt-0.5 opacity-70">
                               self
                             </span>
                           )}
@@ -185,7 +185,7 @@ export default function CorrelationMatrix() {
         </div>
 
         {/* Analysis Card */}
-        <div className="flex-1 bg-slate-900 border border-slate-700 rounded-xl p-6">
+        <div className="flex-1 bg-slate-900 border border-slate-700 rounded-xl p-4 sm:p-6">
           <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-5">
             Diversification Analysis
           </h3>
@@ -235,7 +235,7 @@ export default function CorrelationMatrix() {
               <div className="font-mono text-lg font-semibold text-slate-200">
                 {(offDiagonalValue * offDiagonalValue * 100).toFixed(1)}%
               </div>
-              <div className="text-xs text-slate-500 mt-0.5">r^2 = {(offDiagonalValue * offDiagonalValue).toFixed(4)}</div>
+              <div className="text-xs text-slate-500 mt-0.5">r<sup>2</sup> = {(offDiagonalValue * offDiagonalValue).toFixed(4)}</div>
             </div>
             <div className="bg-slate-800/60 rounded-lg p-3 border border-slate-700/50">
               <div className="text-xs text-slate-500 mb-1">Independent variance</div>

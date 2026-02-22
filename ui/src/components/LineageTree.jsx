@@ -272,7 +272,7 @@ export default function LineageTree() {
   const sorted = [...hybrids].sort((a, b) => a.rank - b.rank);
 
   return (
-    <div style={{ background: '#020617', minHeight: '100%', padding: '16px 20px', fontFamily: 'ui-sans-serif, system-ui, sans-serif', color: '#e2e8f0' }}>
+    <div style={{ background: '#020617', minHeight: '100%', padding: '16px 10px', fontFamily: 'ui-sans-serif, system-ui, sans-serif', color: '#e2e8f0', overflowX: 'hidden' }}>
 
       <div style={{ marginBottom: 14 }}>
         <h2 style={{ fontSize: 16, fontWeight: 700, color: '#f8fafc', margin: 0, letterSpacing: '-0.01em' }}>
@@ -285,32 +285,44 @@ export default function LineageTree() {
 
       {/* Layer 1 */}
       <LayerLabel text="LAYER 1" sub="Speciation (12 strategies, 3 per family)" />
-      <div style={{ display: 'flex', gap: 6 }}>
-        {FAMILIES.map((f) => <FamilyColumn key={f} family={f} />)}
+      <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+        <div style={{ display: 'flex', gap: 6, minWidth: 600 }}>
+          {FAMILIES.map((f) => <FamilyColumn key={f} family={f} />)}
+        </div>
       </div>
 
       <ChampionConnector />
 
       {/* Layer 2 */}
       <LayerLabel text="LAYER 2" sub="Champions (1 per family)" />
-      <div style={{ display: 'flex', gap: 6 }}>
-        {champions.map((c, i) => <ChampionCard key={i} champion={c} />)}
+      <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+        <div style={{ display: 'flex', gap: 6, minWidth: 600 }}>
+          {champions.map((c, i) => <ChampionCard key={i} champion={c} />)}
+        </div>
       </div>
 
       <FanOutConnector />
 
       {/* Layer 3 */}
       <LayerLabel text="LAYER 3" sub="Hybrid templates" />
-      <div style={{ display: 'flex', gap: 6 }}>
-        {sorted.map((h) => <HybridCard key={h.name} hybrid={h} />)}
+      <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+        <div style={{ display: 'flex', gap: 6, minWidth: 500 }}>
+          {sorted.map((h) => <HybridCard key={h.name} hybrid={h} />)}
+        </div>
       </div>
 
-      <RegimeFilterRow sorted={sorted} />
+      <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+        <div style={{ minWidth: 600 }}>
+          <RegimeFilterRow sorted={sorted} />
+        </div>
+      </div>
 
       {/* Layer 4 */}
       <LayerLabel text="LAYER 4" sub="Final ranking (post regime filter)" />
-      <div style={{ display: 'flex', gap: 6 }}>
-        {sorted.map((h) => <FinalCard key={h.rank} hybrid={h} rank={h.rank} />)}
+      <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+        <div style={{ display: 'flex', gap: 6, minWidth: 600 }}>
+          {sorted.map((h) => <FinalCard key={h.rank} hybrid={h} rank={h.rank} />)}
+        </div>
       </div>
 
     </div>

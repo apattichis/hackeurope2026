@@ -600,7 +600,7 @@ export default function Leaderboard() {
       style={{
         background: '#020617',
         minHeight: '100%',
-        padding: '32px 24px 48px',
+        padding: '24px 16px 48px',
         color: '#f1f5f9',
       }}
     >
@@ -635,9 +635,10 @@ export default function Leaderboard() {
       </div>
 
       {/* ---- PODIUM SECTION ---- */}
+      {/* Desktop podium */}
       <div
+        className="hidden sm:flex"
         style={{
-          display: 'flex',
           justifyContent: 'center',
           alignItems: 'flex-end',
           gap: 20,
@@ -646,7 +647,6 @@ export default function Leaderboard() {
           position: 'relative',
         }}
       >
-        {/* Subtle glow behind center podium */}
         <div
           style={{
             position: 'absolute',
@@ -661,6 +661,17 @@ export default function Leaderboard() {
         />
 
         {podiumItems.map((hybrid) => (
+          <PodiumCard
+            key={hybrid.rank}
+            hybrid={hybrid}
+            isCenter={hybrid.rank === 1}
+          />
+        ))}
+      </div>
+
+      {/* Mobile podium - stacked vertically in rank order */}
+      <div className="flex sm:hidden flex-col items-center gap-4 mb-10 pt-6">
+        {sorted.map((hybrid) => (
           <PodiumCard
             key={hybrid.rank}
             hybrid={hybrid}
@@ -689,10 +700,11 @@ export default function Leaderboard() {
             background: '#0f172a',
             border: '1px solid #1e293b',
             borderRadius: 12,
-            overflow: 'hidden',
+            overflowX: 'auto',
+            WebkitOverflowScrolling: 'touch',
           }}
         >
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 700 }}>
             <thead>
               <tr style={{ background: '#0a0f1e' }}>
                 {COLUMNS.map((col) => (

@@ -205,7 +205,7 @@ function RoutingMatrix() {
 
   return (
     <div style={{ overflowX: 'auto' }}>
-      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, fontFamily: 'monospace' }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, fontFamily: 'monospace', minWidth: 420 }}>
         <thead>
           <tr>
             <th style={{ padding: '8px 10px', textAlign: 'left', color: '#64748b', borderBottom: '1px solid #1e293b', fontWeight: 600, fontSize: 11, letterSpacing: '0.06em' }}>
@@ -500,7 +500,7 @@ export default function RegimeExplainer() {
           historical Sharpe ratio. Each regime combination routes to the champion that performed best
           in that specific market condition.
         </p>
-        <div style={{ border: '1px solid #1e293b', borderRadius: 8, overflow: 'hidden' }}>
+        <div style={{ border: '1px solid #1e293b', borderRadius: 8, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
           <RoutingMatrix />
         </div>
       </Section>

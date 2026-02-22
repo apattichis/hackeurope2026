@@ -93,11 +93,11 @@ function KpiCard({ label, value, color }) {
       : 'text-white';
 
   return (
-    <div className="flex flex-col gap-1 bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 min-w-0">
-      <span className="text-xs uppercase tracking-widest text-slate-500 font-semibold truncate">
+    <div className="flex flex-col gap-1 bg-slate-800 border border-slate-700 rounded-lg px-3 sm:px-4 py-3 min-w-0">
+      <span className="text-[10px] sm:text-xs uppercase tracking-widest text-slate-500 font-semibold">
         {label}
       </span>
-      <span className={`text-2xl font-mono font-semibold ${colorClass} truncate`}>
+      <span className={`text-xl sm:text-2xl font-mono font-semibold ${colorClass} truncate`}>
         {value}
       </span>
     </div>
@@ -176,16 +176,16 @@ export default function TearSheet() {
   const returnColor = hybrid.totalReturn > 0 ? 'emerald' : 'rose';
 
   return (
-    <div className="flex flex-col gap-6 p-6 min-h-screen bg-slate-950 text-white">
+    <div className="flex flex-col gap-6 p-4 sm:p-6 min-h-screen bg-slate-950 text-white">
       {/* Dropdown */}
-      <div className="flex items-center gap-3">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
         <label className="text-xs uppercase tracking-widest text-slate-500 font-semibold">
           Strategy
         </label>
         <select
           value={selectedIdx}
           onChange={(e) => setSelectedIdx(Number(e.target.value))}
-          className="bg-slate-800 border border-slate-700 text-white text-sm font-mono rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 cursor-pointer"
+          className="bg-slate-800 border border-slate-700 text-white text-sm font-mono rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 cursor-pointer w-full sm:w-auto"
         >
           {hybrids.map((h, i) => (
             <option key={i} value={i}>
