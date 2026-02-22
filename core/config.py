@@ -46,6 +46,11 @@ FAMILY_INDICATORS = {
 # ── Niche Selection ────────────────────────────────────────────────────────────
 MIN_FITNESS_THRESHOLD = -999.0       # Only filter truly broken strategies (-999)
 
+# ── Fitness ─────────────────────────────────────────────────────────────────────
+# Hard elimination: require at least this many total trades across tradable
+# 3D buckets (granularity=3D, sufficient_evidence=True).
+MIN_TOTAL_TRADES_TRADABLE_BUCKETS = 300
+
 # ── Scientist Loop ─────────────────────────────────────────────────────────────
 MAX_SCIENTIST_ITERATIONS = 5
 MIN_IMPROVEMENT_THRESHOLD = 0.05    # Early exit if 2 consecutive below this

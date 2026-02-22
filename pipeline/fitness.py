@@ -16,7 +16,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from config import MIN_TRADES_SUFFICIENT_EVIDENCE
+from config import MIN_TOTAL_TRADES_TRADABLE_BUCKETS
 
 
 def compute_fitness(diagnostics_df: pd.DataFrame) -> float:
@@ -37,6 +37,7 @@ def compute_fitness(diagnostics_df: pd.DataFrame) -> float:
     - GLOBAL row has sufficient_evidence == False
     - GLOBAL Sharpe is NaN
     - No valid 3D buckets with sufficient_evidence == True
+    - Total trades across tradable 3D buckets < MIN_TOTAL_TRADES_TRADABLE_BUCKETS
     """
 
     # ── 1. Get GLOBAL row ────────────────────────────────────────────────────
@@ -65,6 +66,8 @@ def compute_fitness(diagnostics_df: pd.DataFrame) -> float:
     # ── 4. Trade-weighted coverage ────────────────────────────────────────────
     total_active_trades = active["trade_count"].sum()
     if total_active_trades == 0:
+        return -999.0
+    if total_active_trades < MIN_TOTAL_TRADES_TRADABLE_BUCKETS:
         return -999.0
 
     profitable = active[active["sharpe"] > 0]
