@@ -1,8 +1,17 @@
 # Council of Alphas
 
+<p align="center">
+  <img src="img/council_of_alphas.png" alt="Council of Alphas" width="700">
+</p>
+
 **HackEurope 2026 | Team: The Greeks (Andreas + Markos)**
 
 An evolutionary multi-agent trading framework that prevents mode collapse in LLM strategy generation through enforced specialist diversity, niche-preserving selection, deterministic hybrid construction, and regime-aware filtering.
+
+### Why "Council of Alphas"?
+
+- **"Council"** - 4 specialist agents each contribute their domain expertise, then their outputs are merged through hybrid templates and filtered. A council of specialists whose collective intelligence produces the final result.
+- **"Alphas"** - The surviving strategies that generate financial alpha (excess returns). The whole pipeline is an evolutionary funnel that produces alphas.
 
 ## Quick Start
 
@@ -54,6 +63,13 @@ hackeurope2026/
 ├── agents/
 |   └── optimizer.py              # Deterministic 2D regime filter
 |
+├── ui/                           # React + Vite dashboard
+|   └── src/
+|       └── components/           # Leaderboard, LineageTree, TearSheet, etc.
+|
+├── img/
+|   └── council_of_alphas.png     # Project banner
+|
 ├── eda/
 |   ├── eda.ipynb                 # State matrix EDA (regime coverage, TBM edge)
 |   └── winners_analysis.ipynb    # Post-run analysis of winning strategies
@@ -81,3 +97,22 @@ hackeurope2026/
 8. All 3 hybrids use all surviving champions - no partial champion hybrids
 9. Inline hybrid code only - no compositional/import-based hybrids
 10. Specialists run parallel (`asyncio.gather`), optimizer runs parallel per hybrid
+
+## Contributors
+
+<table>
+  <tr>
+    <td align="center">
+      <a href="https://github.com/apattichis">
+        <img src="https://github.com/apattichis.png" width="100" style="border-radius:50%"><br>
+        <sub><b>Andreas Pattichis</b></sub>
+      </a>
+    </td>
+    <td align="center">
+      <a href="https://github.com/MarkosMarkides">
+        <img src="https://github.com/MarkosMarkides.png" width="100" style="border-radius:50%"><br>
+        <sub><b>Markos Markides</b></sub>
+      </a>
+    </td>
+  </tr>
+</table>

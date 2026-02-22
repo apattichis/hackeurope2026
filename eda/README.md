@@ -19,7 +19,7 @@ Sections:
 2. **Info** - DataFrame structure
 3. **Portfolio Performance** - Equity, returns, drawdown, win rate (TP/SL), risk-reward
 4. **Sharpe Ratio** - Per-trade and sqrt-N scaled Sharpe, zero-fee estimate
-5. **Equity Curve** - Individual + overlay plots ($100k start, 0.5% risk, 0.075% fee)
+5. **Equity Curve** - Individual + overlay plots ($100k start, 0.5% risk, MEXC taker fee)
 6. **Holding Time** - Distribution of trade durations (1 bar = 1 hour)
 
 Reads trade logs from `data/results/ranked/` - run Stage 3 first.

@@ -576,7 +576,7 @@ PIPELINE START
 │   ├── Score all survivors with compute_fitness()
 │   └── Rank by score
 │
-└── OUTPUT → Streamlit UI
+└── OUTPUT → React Dashboard
 ```
 
 ### 12.2 Error Handling Tiers
@@ -617,47 +617,23 @@ UNVIABLE_MAX_CONSEC_LOSSES = 20
 - One hybrid crash does not kill others
 
 ### 12.5 Logging
-Every stage emits structured log events consumed by Streamlit UI in real time.
+Every stage emits structured log events. The pipeline also tracks cumulative API token usage and estimated cost (USD) across all specialist calls.
 
 ---
 
-## 13. Output / UI (Streamlit — Andreas)
+## 13. Output / UI (React + Vite — Andreas)
 
-### 13.1 Panel 1 — Pipeline Status (Live)
-Real-time log of every pipeline event. Shows the system is actively thinking.
-```
-✅ State Matrix loaded (~36,000 candles)
-⚡ Trend Specialist generating strategy 1/3...
-✅ Trend Strategy 1: fitness=2.84, sharpe=0.41, trades=623
-...
-```
+### 13.1 Dashboard Components
+The UI is a React + Vite static dashboard (`ui/`) with the following components:
 
-### 13.2 Panel 2 — Champion Leaderboard
-| Column | Source |
+| Component | Description |
 |---|---|
-| Family | strategy.family |
-| Strategy Name | strategy.name |
-| Fitness Score | compute_fitness() |
-| Sharpe | GLOBAL diagnostics row |
-| Win Rate | GLOBAL diagnostics row |
-| Trades | GLOBAL diagnostics row |
-| Coverage | fitness component |
-
-### 13.3 Panel 3 — Diagnostics Heatmap (Plotly)
-- One heatmap per strategy (champions + hybrids)
-- Rows: Session × Trend combinations
-- Columns: HIGH_VOL / LOW_VOL
-- Color: Sharpe value (red → white → green)
-- Grey: insufficient evidence buckets
-
-### 13.4 Panel 4 — Regime Filter Results
-Per hybrid: which 2D buckets were marked non-tradable, how many signals zeroed, baseline vs filtered fitness.
-
-### 13.5 Panel 5 — Final Ranked Results
-- **Lineage view:** family tree showing which champions fed which hybrid
-- **Cumulative PnL chart (Plotly):** one line per surviving strategy, X=trade number, Y=cumulative return %
-- **Diagnostics expandable** per strategy
-- Fallback champion shown if no hybrids survived
+| `PipelineOverview` | High-level pipeline stats and flow summary |
+| `Leaderboard` | Champion and hybrid strategy rankings with fitness, Sharpe, win rate, trades |
+| `TearSheet` | Per-strategy performance tearsheet (equity curve, drawdown, trade stats) |
+| `LineageTree` | Family tree showing which champions feed which hybrid |
+| `RegimeExplainer` | Visualizes regime bucket performance (Sharpe heatmap across 3D buckets) |
+| `CorrelationMatrix` | Cross-strategy signal correlation |
 
 ---
 

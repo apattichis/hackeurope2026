@@ -104,7 +104,7 @@ flowchart TD
     S4 --> RANK2
 
     %% ── UI ───────────────────────────────────────────────────
-    subgraph UI["STREAMLIT DASHBOARD (Andreas)"]
+    subgraph UI["REACT DASHBOARD (Andreas)"]
         direction LR
         P1["📡 Panel 1<br>Live Pipeline Log"]
         P2["📊 Panel 2<br>Champion Leaderboard<br>+ Win Rate"]

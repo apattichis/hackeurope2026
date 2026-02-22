@@ -64,3 +64,8 @@ SPECIALIST_TEMPERATURE = 0
 SESSIONS = ["ASIA", "LONDON", "NY", "OTHER"]
 TREND_REGIMES = ["UPTREND", "DOWNTREND", "CONSOLIDATION"]
 VOL_REGIMES = ["HIGH_VOL", "LOW_VOL"]
+
+# ── API Cost Tracking ─────────────────────────────────────────────────────
+# Pricing per million tokens (USD) — Claude Opus 4.6 (Feb 2026)
+OPUS_INPUT_COST_PER_M = 15.0
+OPUS_OUTPUT_COST_PER_M = 75.0

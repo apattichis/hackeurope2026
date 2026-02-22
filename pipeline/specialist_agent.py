@@ -41,6 +41,8 @@ from config import (
     SPECIALIST_MODEL,
     SPECIALIST_TEMPERATURE,
     SPECIALIST_FAMILIES,
+    OPUS_INPUT_COST_PER_M,
+    OPUS_OUTPUT_COST_PER_M,
 )
 from strategy_base import Strategy
 from whitelist_indicators import Indicators
@@ -54,6 +56,25 @@ from prompt_builder import build_specialist_prompt
 load_dotenv(_PROJECT_ROOT / ".env")
 
 logger = logging.getLogger("council.specialist")
+
+# ── API Usage Tracking ────────────────────────────────────────────────────────
+_usage = {"input_tokens": 0, "output_tokens": 0, "api_calls": 0}
+
+
+def get_api_usage() -> dict:
+    """Return cumulative API usage and estimated cost (USD)."""
+    cost = (
+        _usage["input_tokens"] / 1_000_000 * OPUS_INPUT_COST_PER_M
+        + _usage["output_tokens"] / 1_000_000 * OPUS_OUTPUT_COST_PER_M
+    )
+    return {**_usage, "estimated_cost_usd": round(cost, 4)}
+
+
+def reset_api_usage() -> None:
+    """Reset counters (call at pipeline start)."""
+    _usage["input_tokens"] = 0
+    _usage["output_tokens"] = 0
+    _usage["api_calls"] = 0
 
 
 # ── Exceptions ────────────────────────────────────────────────────────────────
@@ -229,6 +250,11 @@ async def generate_one_strategy(
             messages=[{"role": "user", "content": prompt}],
         )
         raw_code = response.content[0].text
+
+        # 2b. Track API usage
+        _usage["input_tokens"] += response.usage.input_tokens
+        _usage["output_tokens"] += response.usage.output_tokens
+        _usage["api_calls"] += 1
 
         # 3. Extract code from response
         code = _extract_code(raw_code)

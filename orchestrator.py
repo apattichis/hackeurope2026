@@ -40,7 +40,7 @@ from config import DATA_PATH, STATE_MATRIX_PATH
 from fitness import compute_fitness
 from state_builder import StateMatrixBuilder
 from strategy_base import Strategy
-from specialist_agent import run_all_specialists
+from specialist_agent import run_all_specialists, get_api_usage, reset_api_usage
 from niche_selector import select_champions
 from hybrid_builder import HybridBuilder
 from optimizer import run_all_optimizers
@@ -62,6 +62,7 @@ class PipelineResult:
     fallback_used: bool
     elapsed_seconds: float
     all_speciation: dict | None = None  # {family: [(strategy, score, diag), ...]}
+    api_usage: dict | None = None       # {input_tokens, output_tokens, api_calls, estimated_cost_usd}
 
 
 # ── Orchestrator ─────────────────────────────────────────────────────────────
@@ -91,6 +92,7 @@ class Orchestrator:
     async def run(self, state_matrix=None) -> PipelineResult:
         """Run the full pipeline. Returns PipelineResult."""
         start = time.time()
+        reset_api_usage()
 
         if state_matrix is None:
             # ── 1. Load data ─────────────────────────────────────────────
@@ -151,10 +153,16 @@ class Orchestrator:
                     ranked = self._final_ranking(survivors)
 
         elapsed = time.time() - start
+        api_usage = get_api_usage()
         logger.info(
             f"Pipeline complete in {elapsed:.1f}s: "
             f"{len(ranked)} strategies ranked, "
             f"fallback={'yes' if fallback_used else 'no'}"
+        )
+        logger.info(
+            f"API usage: {api_usage['api_calls']} calls, "
+            f"{api_usage['input_tokens']:,} input + {api_usage['output_tokens']:,} output tokens, "
+            f"estimated cost: ${api_usage['estimated_cost_usd']:.4f}"
         )
 
         return PipelineResult(
@@ -165,6 +173,7 @@ class Orchestrator:
             fallback_used=fallback_used,
             elapsed_seconds=elapsed,
             all_speciation=all_results,
+            api_usage=api_usage,
         )
 
     # ── Stage Implementations ────────────────────────────────────────────
@@ -429,6 +438,7 @@ def save_pipeline_results(
         "fallback_used": result.fallback_used,
         "num_champions": len(result.champions),
         "num_ranked": len(result.ranked),
+        "api_usage": result.api_usage,
         "champions": champ_summaries,
         "ranked": ranked_summaries,
     }
