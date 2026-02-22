@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <b>HackEurope 2026 | Team: The Greeks (Andreas + Markos)</b><br>
+  <b>HackEurope 2026</br>
   <a href="https://council-of-alphas.vercel.app">Live Dashboard</a> | <a href="https://www.hackeurope.com/">HackEurope</a>
 </p>
 
