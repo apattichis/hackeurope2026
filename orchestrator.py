@@ -28,7 +28,7 @@ from pathlib import Path
 
 _PROJECT_ROOT = Path(__file__).resolve().parent
 for _p in [str(_PROJECT_ROOT / "core"), str(_PROJECT_ROOT / "pipeline"),
-           str(_PROJECT_ROOT / "agents")]:
+           str(_PROJECT_ROOT / "optimizer")]:
     if _p not in sys.path:
         sys.path.insert(0, _p)
 

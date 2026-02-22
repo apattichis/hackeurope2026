@@ -66,7 +66,7 @@ flowchart LR
 ```
 core/       State matrix builder, Triple Barrier labeling, backtester, diagnostics
 pipeline/   LLM specialists, indicator sampling, champion selection, hybrid builder, fitness
-agents/     Deterministic 2D regime optimizer
+optimizer/  Deterministic 2D regime optimizer
 ui/         React dashboard (6 tabs: pipeline, lineage, regimes, tearsheet, leaderboard, correlation)
 eda/        Jupyter notebooks for state matrix EDA and winner analysis
 data/       SOL/USD 1h parquet, state matrix, pipeline results

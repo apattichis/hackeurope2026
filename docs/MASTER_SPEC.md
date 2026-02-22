@@ -522,7 +522,7 @@ A bar's signal is kept only if **both** lookups return tradable. Otherwise the s
 The filtered version is accepted **only** if its fitness score exceeds the baseline. This guarantees the optimizer never makes a hybrid worse. If filtering hurts (e.g., by removing too many trades), the unfiltered version is kept as-is.
 
 ### 11.6 Implementation
-Located in `agents/optimizer.py`. Key function: `optimize()` takes a hybrid strategy, state matrix, and returns the best version (filtered or original) along with its diagnostics and fitness.
+Located in `optimizer/optimizer.py`. Key function: `optimize()` takes a hybrid strategy, state matrix, and returns the best version (filtered or original) along with its diagnostics and fitness.
 
 ---
 

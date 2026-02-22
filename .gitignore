@@ -30,6 +30,9 @@ build/
 # Logs
 *.log
 
+# Demo
+DEMO.txt
+
 # OS
 .DS_Store
 Thumbs.db
