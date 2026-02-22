@@ -6,6 +6,8 @@
 
 **HackEurope 2026 | Team: The Greeks (Andreas + Markos)**
 
+**Live Dashboard**: [council-of-alphas.vercel.app](https://council-of-alphas.vercel.app)
+
 An evolutionary multi-agent trading framework that prevents mode collapse in LLM strategy generation through enforced specialist diversity, niche-preserving selection, deterministic hybrid construction, and regime-aware filtering.
 
 ### Why "Council of Alphas"?
@@ -98,7 +100,9 @@ hackeurope2026/
 9. Inline hybrid code only - no compositional/import-based hybrids
 10. Specialists run parallel (`asyncio.gather`), optimizer runs parallel per hybrid
 
-## Contributors
+## The Greeks
+
+Named after the Greeks in quantitative finance (delta, gamma, theta, vega) - and because we actually are Greek.
 
 <table>
   <tr>
