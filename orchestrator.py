@@ -4,7 +4,7 @@ Main pipeline controller.
 
 Implements the full flow from MASTER_SPEC Section 12.1:
   Load Data → State Matrix → Speciation → Niche Selection →
-  Hybrid Building → Scientist Loop → Final Ranking
+  Hybrid Building → Optimizer → Final Ranking
 
 Error handling follows Section 12.2 tiers:
   Fatal: data load, state matrix, zero champions
@@ -43,7 +43,7 @@ from strategy_base import Strategy
 from specialist_agent import run_all_specialists
 from niche_selector import select_champions
 from hybrid_builder import HybridBuilder
-from scientist import run_all_scientists
+from optimizer import run_all_optimizers
 
 load_dotenv(_PROJECT_ROOT / ".env")
 
@@ -76,7 +76,7 @@ class Orchestrator:
     3. Speciation (4 parallel specialists)
     4. Niche selection (1 champion per family)
     5. Hybrid building (3 deterministic templates)
-    6. Scientist loop (parallel Critic/Refiner refinement)
+    6. Optimizer (deterministic 2D regime filter)
     7. Final ranking
     """
 
@@ -88,15 +88,16 @@ class Orchestrator:
         self.data_path = Path(_PROJECT_ROOT) / data_path
         self.state_matrix_path = Path(_PROJECT_ROOT) / state_matrix_path
 
-    async def run(self) -> PipelineResult:
+    async def run(self, state_matrix=None) -> PipelineResult:
         """Run the full pipeline. Returns PipelineResult."""
         start = time.time()
 
-        # ── 1. Load data ─────────────────────────────────────────────────
-        raw_df = self._load_data()
+        if state_matrix is None:
+            # ── 1. Load data ─────────────────────────────────────────────
+            raw_df = self._load_data()
 
-        # ── 2. Build or load state matrix ────────────────────────────────
-        state_matrix = self._load_or_build_state_matrix(raw_df)
+            # ── 2. Build or load state matrix ────────────────────────────
+            state_matrix = self._load_or_build_state_matrix(raw_df)
 
         # ── 3. Speciation ────────────────────────────────────────────────
         all_results = await self._run_speciation(state_matrix)
@@ -130,11 +131,11 @@ class Orchestrator:
                 ranked = self._fallback_to_best_champion(champions)
                 fallback_used = True
             else:
-                # 6. Scientist loop
+                # 6. Optimizer (2D regime filter)
                 champion_strategies = {
                     f: champ[0] for f, champ in champions.items()
                 }
-                survivors = await self._run_scientist_loop(
+                survivors = await self._run_optimizer(
                     hybrids, state_matrix, champion_strategies
                 )
                 hybrids_survived = len(survivors)
@@ -259,18 +260,18 @@ class Orchestrator:
         logger.info(f"Built {len(hybrids)} hybrids")
         return hybrids
 
-    async def _run_scientist_loop(
+    async def _run_optimizer(
         self,
         hybrids: list[Strategy],
         state_matrix: pd.DataFrame,
         champion_strategies: dict[str, Strategy],
     ) -> list[tuple[Strategy, float, pd.DataFrame]]:
-        """Run Scientist refinement on all hybrids in parallel."""
-        logger.info(f"Starting Scientist loop: {len(hybrids)} hybrids...")
-        survivors = await run_all_scientists(
+        """Run 2D regime filter on all hybrids in parallel."""
+        logger.info(f"Starting optimizer: {len(hybrids)} hybrids...")
+        survivors = await run_all_optimizers(
             hybrids, state_matrix, champion_strategies
         )
-        logger.info(f"Scientist complete: {len(survivors)} hybrids survived")
+        logger.info(f"Optimizer complete: {len(survivors)} hybrids survived")
         return survivors
 
     def _final_ranking(

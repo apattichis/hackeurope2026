@@ -6,7 +6,7 @@
 
 ## 0. One-Line Summary
 
-An evolutionary multi-agent framework that prevents mode collapse in LLM strategy generation through enforced specialist diversity, niche-preserving selection, deterministic hybrid construction, and evidence-locked diagnostic refinement.
+An evolutionary multi-agent framework that prevents mode collapse in LLM strategy generation through enforced specialist diversity, niche-preserving selection, deterministic hybrid construction, and regime-aware filtering.
 
 ---
 
@@ -162,7 +162,7 @@ StateMatrixBuilder(
 ## 5. Specialist Agents
 
 ### 5.1 Overview
-4 LLM agents (Claude Sonnet, temp=0), each locked to a distinct strategy family through prompt constraints and a restricted indicator subset.
+4 LLM agents (Claude Opus, temp=0), each locked to a distinct strategy family through prompt constraints and a restricted indicator subset.
 
 ### 5.2 Strategy Families & Indicator Subsets
 
@@ -294,7 +294,7 @@ Custom `VectorizedBacktester` — no VectorBT dependency. Numba-accelerated with
 ### 6.2 Parameters
 | Parameter | Value |
 |---|---|
-| Fee | 0.00040 (0.04% MEXC taker fee) |
+| Fee | 0.00075 (0.075% taker fee) |
 | Risk per trade | 0.5% of account equity |
 | Initial capital | $100,000 |
 | Max leverage | 20x |
@@ -363,8 +363,8 @@ Note: 60 rows (not 48) because OTHER session adds extra rows.
 - Forced to NaN if std = 0 or trade_count < 2
 - Population std (ddof=0)
 
-### 7.5 Critic Input Filter
-Only rows where `sufficient_evidence = True` are passed to the Critic.
+### 7.5 Optimizer Input
+Only rows at the 2D granularity level are used by the regime filter (Session x Trend, Session x Vol).
 
 ---
 
@@ -397,7 +397,7 @@ if isnan(global_row.sharpe): return -999
 if len(active_3d_buckets) == 0: return -999
 if total_trades_in_tradable_3d_buckets < 300: return -999
 ```
-Note: Negative Sharpe is allowed through - strategies with Sharpe between -5.0 and 0 can compete and be improved by the Scientist loop. The is_unviable() gate (Sharpe < -5.0) catches truly hopeless strategies before wasting API calls. The 300-trade minimum ensures sufficient evidence across tradable buckets.
+Note: Negative Sharpe is allowed through - strategies with Sharpe between -5.0 and 0 can still compete. The is_unviable() gate (Sharpe < -5.0) catches truly hopeless strategies. The 300-trade minimum ensures sufficient evidence across tradable buckets.
 
 ### 8.4 Why This Formula Works
 - **Global_Sharpe** gates: is this strategy actually profitable risk-adjusted?
@@ -406,7 +406,7 @@ Note: Negative Sharpe is allowed through - strategies with Sharpe between -5.0 a
 - Multiplication means all three must be positive — no compensating for weakness in one with strength in another
 - UPTREND-only specialist scores well: Coverage ≈ 1.0 (all its active trades are profitable), Fragility = 0
 
-### 8.5 Same formula used for both champions (Stage 3) and hybrids (Stage 5).
+### 8.5 Same formula used for champions (Stage 2), hybrids (Stage 3), and filtered hybrids (Stage 4).
 
 ---
 
@@ -421,12 +421,12 @@ Note: Negative Sharpe is allowed through - strategies with Sharpe between -5.0 a
 ### 9.2 Order
 ```
 Specialists generate → Fitness scored → Niche selection →
-HybridBuilder → Scientist → Final fitness → Ranking
+HybridBuilder → 2D Regime Filter → Final fitness → Ranking
 ```
 
 ---
 
-## 10. HybridBuilder (Pure Python — No LLM)
+## 10. HybridBuilder (Pure Python)
 
 ### 10.1 Overview
 Deterministic Python class. Takes up to 4 champions and their diagnostics. Produces exactly 3 hybrid strategies.
@@ -463,7 +463,7 @@ signal = np.sign(weighted_sum)
 ```
 
 ### 10.5 Code Structure
-All hybrids are **inline** Strategy subclasses with combination parameters as CLASS ATTRIBUTES (modifiable by the Scientist's Refiner). Champion strategy references are injected via `_champion_strategies` dict:
+All hybrids are **inline** Strategy subclasses with combination parameters as CLASS ATTRIBUTES. Champion strategy references are injected via `_champion_strategies` dict:
 ```python
 class RegimeRouterHybrid(Strategy):
     name = "regime_router"
@@ -485,115 +485,44 @@ If a champion has zero sufficient_evidence 3D buckets → use its global signal 
 
 ---
 
-## 11. Scientist / Critic Loop
+## 11. 2D Regime Filter (Optimizer)
 
-### 11.1 Loop Structure (per hybrid, independent)
+### 11.1 Overview
+A deterministic, single-pass optimization stage that sharpens each hybrid by silencing trades in regime combinations where it has not demonstrated positive performance. Runs per hybrid, in parallel.
+
+### 11.2 Flow (per hybrid)
 ```
-1. BACKTEST → trade log
+1. BACKTEST hybrid → trade log
 2. DIAGNOSTICS → 60-row bucket table
-3. FITNESS CHECK → if -999: UNVIABLE, stop
-4. CRITIC (Opus, temp=0) → structured diagnosis
-5. IF UNVIABLE → discard hybrid
-   IF CONTINUE → send to Refiner
-6. REFINER (Sonnet, temp=0) → updated code (one change)
-7. VALIDATION GATE → accept/revert/early-exit
-8. REPEAT max 5 iterations
+3. FITNESS → baseline score
+4. EXTRACT 2D tradability from diagnostics (Session×Trend, Session×Vol)
+5. For each bar: check if its regime combination is tradable
+6. ZERO signals in non-tradable bars
+7. RE-BACKTEST filtered signals → new trade log
+8. RE-DIAGNOSTICS → new bucket table
+9. RE-FITNESS → filtered score
+10. ACCEPT filtered version only if fitness improved, otherwise keep original
 ```
 
-### 11.2 Iteration Rules
-- Max iterations: **5**
-- Early exit: 2 consecutive iterations with improvement < 0.05 Sharpe → stop, keep best version
-- Revert: if new score < previous score → revert to previous version
-- Guaranteed monotonic improvement: v_n ≥ v_{n-1} always
+### 11.3 Tradability Rules
+A 2D bucket is **tradable** if and only if:
+- `sufficient_evidence = True` (trade_count >= 30)
+- `sharpe > 0`
 
-### 11.3 UNVIABLE Conditions
-Declare UNVIABLE immediately if ANY of these are true:
-- GLOBAL Sharpe < -5.0 (with sufficient_evidence=True)
-- Zero 3D buckets have both sufficient_evidence=True AND Sharpe > 0
-- GLOBAL max_consecutive_losses > 20
+Missing buckets (regime combinations not seen in the diagnostics) default to **non-tradable** (conservative).
 
-Note: The Sharpe threshold is intentionally lenient (-5.0) to let the Scientist loop attempt recovery on strategies that are poor but not completely broken.
+### 11.4 Signal Filtering
+For each bar in the state matrix, the optimizer checks two 2D lookups:
+- (session, trend_regime) → tradable?
+- (session, vol_regime) → tradable?
 
-### 11.4 Fallback
-If all 3 hybrids are declared UNVIABLE → fall back to best champion by fitness score.
+A bar's signal is kept only if **both** lookups return tradable. Otherwise the signal is set to 0.
 
-### 11.5 Critic Prompt (Claude Opus, temp=0)
-```
-You are the Evidence-Locked Critic for the Council of Alphas framework.
+### 11.5 Monotonic Guarantee
+The filtered version is accepted **only** if its fitness score exceeds the baseline. This guarantees the optimizer never makes a hybrid worse. If filtering hurts (e.g., by removing too many trades), the unfiltered version is kept as-is.
 
-═══ YOUR ROLE ═══
-You diagnose why a trading strategy is underperforming by reading
-its diagnostic bucket table and strategy code. You do not guess.
-Every claim you make must cite an exact bucket and an exact number
-from the table provided.
-
-═══ INPUTS YOU ARE GIVEN ═══
-1. STRATEGY CODE — read this only to identify what specific parameter
-   or logic explains the failure pattern you find in the diagnostics.
-2. DIAGNOSTIC TABLE — sufficient_evidence=True rows only. Columns:
-   granularity, session, trend_regime, vol_regime, trade_count,
-   win_rate, sharpe, max_consecutive_losses, sufficient_evidence.
-
-═══ HOW TO DIAGNOSE ═══
-Scan strictly in this order:
-1. GLOBAL row — is overall Sharpe salvageable?
-2. 1D slices — which single dimension is the primary drag?
-3. 2D slices — which interaction is the core problem?
-4. 3D buckets — identify the exact failing micro-regime(s).
-
-═══ STRICT CONSTRAINTS ═══
-- You may NOT suggest structural rewrites
-- You may NOT change the strategy family or its indicators
-- You may NOT invent metrics not present in the table
-- One surgical fix only — a parameter value, a threshold,
-  or a single condition change
-- Every claim must cite: [bucket] | sharpe=[x] | n=[x]
-
-═══ UNVIABLE CONDITIONS ═══
-Declare UNVIABLE immediately if ANY of these are true:
-- GLOBAL sharpe < -5.0 (with sufficient_evidence=True)
-- Zero 3D buckets have both sufficient_evidence=True AND sharpe > 0
-- GLOBAL max_consecutive_losses > 20
-
-Note: The Sharpe threshold is intentionally lenient (-5.0) to let the
-refinement loop attempt recovery on strategies that are poor but not
-completely broken.
-
-═══ OUTPUT FORMAT ═══
-Respond in exactly this structure, nothing else:
-
-PRIMARY_FAILURE: [exact bucket] | sharpe=[value] | n=[value]
-ROOT_CAUSE: [one sentence citing the code]
-SURGICAL_FIX: [exact code change — parameter name, old value, new value]
-EXPECTED_IMPACT: [which metric improves and why]
-VERDICT: CONTINUE | UNVIABLE
-```
-
-### 11.6 Refiner Prompt (Claude Sonnet, temp=0)
-```
-You are the Surgical Refiner for the Council of Alphas framework.
-
-═══ YOUR ROLE ═══
-You receive a trading strategy and one precise instruction
-from the Critic. Your job is to apply exactly that fix
-and nothing else.
-
-═══ STRICT CONSTRAINTS ═══
-- Apply ONE change only — exactly what the Critic specified
-- Do NOT restructure the code
-- Do NOT change indicators or strategy family
-- Do NOT add new logic
-- Do NOT remove existing logic unless explicitly instructed
-- Return the complete updated class, nothing else
-
-═══ INPUT ═══
-STRATEGY CODE: {code}
-CRITIC INSTRUCTION: {surgical_fix}
-
-═══ OUTPUT ═══
-Return ONLY the complete updated Python class.
-No explanation. No markdown. No imports.
-```
+### 11.6 Implementation
+Located in `agents/optimizer.py`. Key function: `optimize()` takes a hybrid strategy, state matrix, and returns the best version (filtered or original) along with its diagnostics and fitness.
 
 ---
 
@@ -616,7 +545,7 @@ PIPELINE START
 │   ├── Each specialist (1-3 strategies):
 │   │   ├── IndicatorSampler.sample() → random subset
 │   │   ├── PromptBuilder.build() → full prompt
-│   │   ├── Claude Sonnet API call → strategy code
+│   │   ├── Claude Opus API call → strategy code
 │   │   ├── Code validation (3 attempts max, error feedback)
 │   │   ├── strategy.generate_signals(state_matrix) → signal col
 │   │   ├── VectorizedBacktester.run() → trade log
@@ -629,29 +558,23 @@ PIPELINE START
 │   ├── If score ≤ 0 → family eliminated
 │   └── Champions dict: {family: (strategy, score, diagnostics)}
 │
-├── 5. HYBRID BUILDING (pure Python, no LLM)
+├── 5. HYBRID BUILDING (pure Python)
 │   ├── HybridBuilder.build_regime_router()
 │   ├── HybridBuilder.build_consensus_gate()
 │   └── HybridBuilder.build_weighted_combination()
 │
-├── 6. SCIENTIST LOOP (parallel, all hybrids concurrently)
+├── 6. 2D REGIME FILTER (parallel, all hybrids concurrently)
 │   ├── For each hybrid:
-│   │   ├── Backtest → diagnostics → fitness
-│   │   ├── UNVIABLE check → discard if triggered
-│   │   ├── Max 5 iterations:
-│   │   │   ├── Critic (Opus) → diagnosis + verdict
-│   │   │   ├── If UNVIABLE → stop
-│   │   │   ├── Refiner (Sonnet) → updated code
-│   │   │   ├── Rebacktest → new fitness
-│   │   │   ├── If improvement < 0.05 twice → early exit
-│   │   │   └── If degraded → revert
-│   │   └── Store best version
-│   └── Collect surviving hybrids
+│   │   ├── Backtest → diagnostics → fitness (baseline)
+│   │   ├── Extract 2D tradability (Session×Trend, Session×Vol)
+│   │   ├── Zero signals in non-tradable bars
+│   │   ├── Re-backtest → diagnostics → fitness (filtered)
+│   │   └── Accept filtered only if fitness improved
+│   └── Collect all hybrids (filtered or original)
 │
 ├── 7. FINAL RANKING
 │   ├── Score all survivors with compute_fitness()
-│   ├── If survivors > 0 → rank by score
-│   └── If survivors == 0 → fall back to best champion
+│   └── Rank by score
 │
 └── OUTPUT → Streamlit UI
 ```
@@ -665,7 +588,7 @@ PIPELINE START
 | Speciation | One specialist fails | Warn, continue with 3 families |
 | Niche Selection | < 2 champions | Warn, continue |
 | Hybrid Building | One template fails | Skip that hybrid |
-| Scientist | All hybrids UNVIABLE | Fall back to best champion |
+| Regime Filter | Filter degrades fitness | Keep unfiltered version |
 | Ranking | No survivors | Return best champion |
 
 ### 12.3 Configuration Constants
@@ -674,13 +597,11 @@ PIPELINE START
 MAX_STRATEGIES_PER_SPECIALIST = 3
 MAX_GENERATION_ATTEMPTS = 3
 STRATEGY_TIMEOUT_SECONDS = 60
-MAX_SCIENTIST_ITERATIONS = 5
-MIN_IMPROVEMENT_THRESHOLD = 0.05  # early exit if below this twice
 TBM_WIN = 2.0
 TBM_LOSS = 1.0
 TBM_TIME_HORIZON = 24            # 24 bars = 24 hours on 1h
 TBM_ATR_WINDOW = 24
-BACKTEST_FEE = 0.00040           # 0.04% MEXC taker fee
+BACKTEST_FEE = 0.00075           # 0.075% taker fee
 RISK_PER_TRADE = 0.005           # 0.5% risk per trade
 MIN_TRADES_SUFFICIENT_EVIDENCE = 30
 MIN_TOTAL_TRADES_TRADABLE_BUCKETS = 300
@@ -692,9 +613,8 @@ UNVIABLE_MAX_CONSEC_LOSSES = 20
 ### 12.4 Parallelism
 - Specialists: `asyncio.gather(return_exceptions=True)` — parallel API calls
 - One specialist crash does not kill others
-- Scientist loop: `asyncio.gather(return_exceptions=True)` — all 3 hybrids refined concurrently
+- Optimizer: `asyncio.gather(return_exceptions=True)` — all 3 hybrids filtered concurrently
 - One hybrid crash does not kill others
-- Inside each hybrid's loop: iterations run sequential (each depends on previous)
 
 ### 12.5 Logging
 Every stage emits structured log events consumed by Streamlit UI in real time.
@@ -730,8 +650,8 @@ Real-time log of every pipeline event. Shows the system is actively thinking.
 - Color: Sharpe value (red → white → green)
 - Grey: insufficient evidence buckets
 
-### 13.4 Panel 4 — Scientist Loop Trace
-Per hybrid: iteration history showing Sharpe improvement, Critic diagnosis summary, fix applied.
+### 13.4 Panel 4 — Regime Filter Results
+Per hybrid: which 2D buckets were marked non-tradable, how many signals zeroed, baseline vs filtered fitness.
 
 ### 13.5 Panel 5 — Final Ranked Results
 - **Lineage view:** family tree showing which champions fed which hybrid
@@ -745,37 +665,7 @@ Per hybrid: iteration history showing Sharpe improvement, Critic diagnosis summa
 
 | Role | Model | Temperature |
 |---|---|---|
-| Specialist Agents (×4) | Claude Sonnet | 0 |
-| Architect | **Python only — no LLM** | N/A |
-| Scientist Critic | Claude Opus | 0 |
-| Scientist Refiner | Claude Sonnet | 0 |
+| Specialist Agents (x4) | Claude Opus | 0 |
+| HybridBuilder | Pure Python | N/A |
+| Optimizer (2D Regime Filter) | Pure Python | N/A |
 
----
-
-## 15. Pre-Built Files (Provided — Do Not Rewrite Core Logic)
-
-| File | Status | Notes |
-|---|---|---|
-| `core/state_builder.py` | Needs parameter updates | Update thresholds per Section 4.4 |
-| `core/labeling.py` | Ready | New dual-direction version |
-| `core/backtesting.py` | Ready | VectorizedBacktester |
-| `core/diagnostics.py` | Ready | Includes sufficient_evidence |
-| `core/whitelist_indicators.py` | Ready | Full indicator library |
-| `pipeline/indicator_sampler.py` | Needs cleanup | Remove hidden indicators, replace prompt generation |
-| `core/strategy_base.py` | Needs update | Remove tbm_win/tbm_loss, add description |
-
-## 16. Files to Build
-
-| File | Purpose |
-|---|---|
-| `core/config.py` | All constants in one place |
-| `pipeline/prompt_builder.py` | Builds specialist prompts from template + sampled indicators |
-| `pipeline/specialist_agent.py` | LLM call + code validation + retry logic |
-| `pipeline/fitness.py` | compute_fitness() function |
-| `pipeline/niche_selector.py` | Champion selection logic |
-| `pipeline/hybrid_builder.py` | HybridBuilder class (all 3 templates) |
-| `agents/critic_agent.py` | Opus Critic call + response parser |
-| `agents/refiner_agent.py` | Sonnet Refiner call |
-| `agents/scientist.py` | Full Scientist loop orchestration |
-| `orchestrator.py` | Main pipeline controller |
-| `app.py` | Streamlit UI |

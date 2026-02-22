@@ -22,7 +22,7 @@ TBM_TIME_HORIZON = 24                # Max 24 bars (~24 hours on 1h)
 TBM_TIE_BREAK = "stop_first"        # Worst-case on whipsaw
 
 # ── Backtesting ────────────────────────────────────────────────────────────────
-BACKTEST_FEE = 0.00040              # 0.04% MEXC taker fee
+BACKTEST_FEE = 0.00075              # 0.075% taker fee
 RISK_PER_TRADE = 0.005              # 0.5% risk per trade
 
 # ── Diagnostics ────────────────────────────────────────────────────────────────
@@ -52,20 +52,13 @@ MIN_FITNESS_THRESHOLD = -999.0       # Only filter truly broken strategies (-999
 # 3D buckets (granularity=3D, sufficient_evidence=True).
 MIN_TOTAL_TRADES_TRADABLE_BUCKETS = 300
 
-# ── Scientist Loop ─────────────────────────────────────────────────────────────
-MAX_SCIENTIST_ITERATIONS = 5
-MIN_IMPROVEMENT_THRESHOLD = 0.05    # Early exit if 2 consecutive below this
-
-# ── UNVIABLE Thresholds (checked before Critic) ────────────────────────────────
+# ── UNVIABLE Thresholds ───────────────────────────────────────────────────────
 UNVIABLE_GLOBAL_SHARPE = -5.0       # GLOBAL Sharpe below this → UNVIABLE
 UNVIABLE_MAX_CONSEC_LOSSES = 20     # GLOBAL max consecutive losses above this → UNVIABLE
 
 # ── Models ─────────────────────────────────────────────────────────────────────
-SONNET_MODEL = "claude-sonnet-4-6"
-OPUS_MODEL = "claude-opus-4-6"
+SPECIALIST_MODEL = "claude-opus-4-6"
 SPECIALIST_TEMPERATURE = 0
-CRITIC_TEMPERATURE = 0
-REFINER_TEMPERATURE = 0
 
 # ── Regime Labels ──────────────────────────────────────────────────────────────
 SESSIONS = ["ASIA", "LONDON", "NY", "OTHER"]

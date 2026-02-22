@@ -35,7 +35,7 @@ flowchart TD
 
         SAMPLER["🎲 IndicatorSampler<br>Random subset per call<br>Prevents intra-specialist<br>mode collapse"]
 
-        subgraph SPECS["4 Specialist Agents (Claude Sonnet · temp=0)"]
+        subgraph SPECS["4 Specialist Agents (Claude Opus · temp=0)"]
             direction TB
             SP1["🧬 Trend<br>ema·hma·macd·adx·slope"]
             SP2["🧬 Momentum<br>rsi·cci·roc·mfi·zscore"]
@@ -44,7 +44,7 @@ flowchart TD
         end
 
         VALIDATE["✅ Code Validation<br>3 attempts max<br>Syntax→Run→Type→Trades<br>Error feedback injected"]
-        BACKTEST1["⚡ VectorizedBacktester<br>Fee=0.04% · 0.5% risk/trade<br>Numba accelerated"]
+        BACKTEST1["⚡ VectorizedBacktester<br>Fee=0.075% · 0.5% risk/trade<br>Numba accelerated"]
         DIAG1["📊 DiagnosticsEngine<br>60-row bucket table<br>GLOBAL·1D·2D·3D<br>24 micro-buckets"]
         FIT1["🎯 Fitness Score<br>Global_Sharpe × ln(N) × Coverage<br>Coverage = trade-weighted<br>Hard elim if Sharpe≤0"]
 
@@ -65,7 +65,7 @@ flowchart TD
     S1 --> S2
 
     %% ── STAGE 3: HYBRID BUILDING ─────────────────────────────
-    subgraph S3["STAGE 3 — HYBRID BUILDING (pure Python · no LLM)"]
+    subgraph S3["STAGE 3 — HYBRID BUILDING (pure Python)"]
         direction LR
         H1["🔀 Hybrid 1<br>Regime Router<br>Argmax Sharpe per<br>24 regime buckets"]
         H2["🗳️ Hybrid 2<br>Consensus Gate<br>3/4 champions must<br>agree on direction"]
@@ -74,33 +74,25 @@ flowchart TD
 
     S2 --> S3
 
-    %% ── STAGE 4: SCIENTIST LOOP ──────────────────────────────
-    subgraph S4["STAGE 4 — SCIENTIST LOOP (per hybrid · max 5 iterations)"]
+    %% ── STAGE 4: 2D REGIME FILTER ────────────────────────────
+    subgraph S4["STAGE 4 — 2D REGIME FILTER (per hybrid · deterministic)"]
         direction TB
-        BT2["⚡ Backtest +<br>Diagnostics +<br>Fitness"]
-        CRITIC["🔬 Critic<br>Claude Opus · temp=0<br>Evidence-locked<br>Cites exact buckets"]
-        VERDICT{"VERDICT?"}
-        REFINER["🔧 Refiner<br>Claude Sonnet · temp=0<br>One surgical fix only"]
-        VGATE{"Validation<br>Gate"}
-        UNVIABLE["❌ UNVIABLE<br>Discard hybrid"]
-        KEEP["💾 Keep best<br>version"]
-        EARLY["⏹️ Early exit<br>2× improvement<br>< 0.05 Sharpe"]
+        BT2["⚡ Backtest +<br>Diagnostics +<br>Fitness (baseline)"]
+        EXTRACT["📋 Extract 2D Buckets<br>Session × Trend<br>Session × Vol"]
+        TRADABLE{"Tradable?<br>sharpe > 0 AND<br>sufficient_evidence"}
+        ZERO["🚫 Zero signals<br>in non-tradable bars"]
+        REEVAL["⚡ Re-backtest +<br>Diagnostics +<br>Fitness (filtered)"]
+        GATE{"Fitness<br>improved?"}
+        ACCEPT["✅ Accept<br>filtered version"]
+        REJECT["💾 Keep<br>unfiltered version"]
 
-        BT2 --> CRITIC --> VERDICT
-        VERDICT -->|UNVIABLE| UNVIABLE
-        VERDICT -->|CONTINUE| REFINER
-        REFINER --> VGATE
-        VGATE -->|improved| BT2
-        VGATE -->|degraded| KEEP
-        VGATE -->|2× no improvement| EARLY
+        BT2 --> EXTRACT --> TRADABLE
+        TRADABLE --> ZERO --> REEVAL --> GATE
+        GATE -->|yes| ACCEPT
+        GATE -->|no| REJECT
     end
 
     S3 --> S4
-
-    %% ── FALLBACK ─────────────────────────────────────────────
-    FALLBACK["⚠️ Fallback<br>Best champion<br>if all hybrids<br>UNVIABLE"]
-
-    S4 -->|all UNVIABLE| FALLBACK
 
     %% ── FINAL RANKING ────────────────────────────────────────
     subgraph RANK2["FINAL RANKING"]
@@ -110,7 +102,6 @@ flowchart TD
     end
 
     S4 --> RANK2
-    FALLBACK --> RANK2
 
     %% ── UI ───────────────────────────────────────────────────
     subgraph UI["STREAMLIT DASHBOARD (Andreas)"]
@@ -118,16 +109,15 @@ flowchart TD
         P1["📡 Panel 1<br>Live Pipeline Log"]
         P2["📊 Panel 2<br>Champion Leaderboard<br>+ Win Rate"]
         P3["🌡️ Panel 3<br>Diagnostics Heatmap<br>(Plotly)"]
-        P4["🔬 Panel 4<br>Scientist Loop Trace"]
+        P4["🔀 Panel 4<br>Regime Filter Results"]
         P5["🏆 Panel 5<br>Final Results<br>Lineage + PnL Chart"]
     end
 
     RANK2 --> UI
 
     %% ── MODEL LABELS ─────────────────────────────────────────
-    SONNET["Claude Sonnet<br>Specialists + Refiner<br>temp=0"]
-    OPUS["Claude Opus<br>Critic only<br>temp=0"]
-    PYTHON["Pure Python<br>HybridBuilder<br>No LLM"]
+    OPUS["Claude Opus<br>Specialists only<br>temp=0"]
+    PYTHON["Pure Python<br>HybridBuilder +<br>Optimizer"]
 
     %% ── STYLING ──────────────────────────────────────────────
     classDef dataNode fill:#0f3460,stroke:#e94560,stroke-width:2px,color:#fff
@@ -138,6 +128,5 @@ flowchart TD
 
     class RAW,MATRIX dataNode
     class P1,P2,P3,P4,P5 outputNode
-    class UNVIABLE,FALLBACK warningNode
-    class SONNET,OPUS,PYTHON modelTag
+    class OPUS,PYTHON modelTag
 ```

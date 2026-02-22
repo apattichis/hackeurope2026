@@ -38,7 +38,7 @@ from config import (
     BACKTEST_FEE,
     RISK_PER_TRADE,
     MIN_TRADES_SUFFICIENT_EVIDENCE,
-    SONNET_MODEL,
+    SPECIALIST_MODEL,
     SPECIALIST_TEMPERATURE,
     SPECIALIST_FAMILIES,
 )
@@ -223,7 +223,7 @@ async def generate_one_strategy(
         # 2. Call Claude Sonnet
         client = anthropic.AsyncAnthropic()
         response = await client.messages.create(
-            model=SONNET_MODEL,
+            model=SPECIALIST_MODEL,
             max_tokens=4096,
             temperature=SPECIALIST_TEMPERATURE,
             messages=[{"role": "user", "content": prompt}],

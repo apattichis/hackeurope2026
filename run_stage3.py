@@ -4,7 +4,7 @@ Stage 3: Full pipeline run with comprehensive result saving.
 Runs the complete Council of Alphas pipeline and saves all results to data/results/:
 - speciation/: all 12 strategies (3 per family x 4 families)
 - champions/: 4 champion strategies
-- ranked/: final ranked strategies (hybrids after Scientist)
+- ranked/: final ranked strategies (hybrids after optimizer)
 - summary.json: top-level overview
 
 Each strategy folder contains:
