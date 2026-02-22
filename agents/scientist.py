@@ -33,6 +33,7 @@ from dotenv import load_dotenv
 
 from config import (
     BACKTEST_FEE,
+    RISK_PER_TRADE,
     MIN_TRADES_SUFFICIENT_EVIDENCE,
     MAX_SCIENTIST_ITERATIONS,
     MIN_IMPROVEMENT_THRESHOLD,
@@ -80,7 +81,7 @@ def _evaluate_strategy(
 
     df = state_matrix.copy()
     df["_signal"] = signals.values
-    backtester = VectorizedBacktester(fee=BACKTEST_FEE)
+    backtester = VectorizedBacktester(fee=BACKTEST_FEE, risk_per_trade=RISK_PER_TRADE)
     trade_log = backtester.run(df, "_signal")
 
     engine = DiagnosticsEngine(
@@ -357,7 +358,7 @@ if __name__ == "__main__":
     # ── Test 3: is_unviable() detection ──────────────────────────────────
     print("\n=== Test 3: is_unviable() detection ===")
 
-    # Create a diagnostics table that triggers UNVIABLE (Sharpe < -0.5)
+    # Create a diagnostics table that triggers UNVIABLE (Sharpe < -5.0)
     bad_diag = pd.DataFrame([{
         "granularity": "GLOBAL",
         "session": "ALL",
@@ -365,7 +366,7 @@ if __name__ == "__main__":
         "vol_regime": "ALL",
         "trade_count": 500,
         "win_rate": 0.30,
-        "sharpe": -0.8,
+        "sharpe": -6.0,
         "max_consecutive_losses": 5,
         "sufficient_evidence": True,
     }])

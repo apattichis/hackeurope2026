@@ -69,7 +69,7 @@ Taken together, the literature suggests three complementary gaps:
 
 ## 7. Our approach in one paragraph (Council of Alphas)
 
-We propose an evolutionary multi-agent framework that preserves diversity by construction (specialists constrained to distinct strategy families plus niche-preserving selection), while using LLMs as “smart operators” that decide when and how to mutate, hybridize, and refine candidates based on structured diagnostics. Empirically, we target fee-inclusive backtests on 15-minute Solana (SOL-USD) candlesticks and report both global metrics and regime-stratified diagnostics (session, trend, volatility). To reduce ungrounded iteration, our refinement step is evidence-locked: the critic must cite concrete diagnostic failures and propose a single surgical code change, which is validated with accept/revert gates to prevent degradation.
+We propose an evolutionary multi-agent framework that preserves diversity by construction (specialists constrained to distinct strategy families plus niche-preserving selection), while using LLMs as “smart operators” that decide when and how to mutate, hybridize, and refine candidates based on structured diagnostics. Empirically, we target fee-inclusive backtests on 1-hour Solana (SOL-USD) candlesticks and report both global metrics and regime-stratified diagnostics (session, trend, volatility). To reduce ungrounded iteration, our refinement step is evidence-locked: the critic must cite concrete diagnostic failures and propose a single surgical code change, which is validated with accept/revert gates to prevent degradation.
 
 ---
 

@@ -16,13 +16,14 @@ ATR_WINDOW = 24                      # 24 bars = 24 hours on 1h
 VOL_SMA_WINDOW = 20
 
 # ── Triple Barrier (fixed system-wide — NOT on Strategy objects) ───────────────
-TBM_WIN = 3.0                        # Take Profit = entry + 3.0 × ATR
-TBM_LOSS = 1.5                       # Stop Loss   = entry - 1.5 × ATR
+TBM_WIN = 2.0                        # Take Profit = entry + 2.0 × ATR
+TBM_LOSS = 1.0                       # Stop Loss   = entry - 1.0 × ATR
 TBM_TIME_HORIZON = 24                # Max 24 bars (~24 hours on 1h)
 TBM_TIE_BREAK = "stop_first"        # Worst-case on whipsaw
 
 # ── Backtesting ────────────────────────────────────────────────────────────────
 BACKTEST_FEE = 0.00040              # 0.04% MEXC taker fee
+RISK_PER_TRADE = 0.005              # 0.5% risk per trade
 
 # ── Diagnostics ────────────────────────────────────────────────────────────────
 MIN_TRADES_SUFFICIENT_EVIDENCE = 30
@@ -56,7 +57,7 @@ MAX_SCIENTIST_ITERATIONS = 5
 MIN_IMPROVEMENT_THRESHOLD = 0.05    # Early exit if 2 consecutive below this
 
 # ── UNVIABLE Thresholds (checked before Critic) ────────────────────────────────
-UNVIABLE_GLOBAL_SHARPE = -0.5       # GLOBAL Sharpe below this → UNVIABLE
+UNVIABLE_GLOBAL_SHARPE = -5.0       # GLOBAL Sharpe below this → UNVIABLE
 UNVIABLE_MAX_CONSEC_LOSSES = 20     # GLOBAL max consecutive losses above this → UNVIABLE
 
 # ── Models ─────────────────────────────────────────────────────────────────────

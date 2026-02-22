@@ -17,13 +17,13 @@
 flowchart TD
 
     %% ── DATA LAYER ──────────────────────────────────────────
-    RAW["📦 Raw Binance Parquet<br>SOL-USD 15m · 3 years<br>Cols: OHLCV + quote_volume + count + taker_buy_volume"]
+    RAW["📦 Raw Binance Parquet<br>SOL-USD 1h · Jan 2022 - Feb 2026<br>Cols: OHLCV + quote_volume + count + taker_buy_volume"]
 
     subgraph SM["STATE MATRIX BUILD (once, cached to parquet)"]
         direction TB
-        REGIME["🔀 Regime Tagging<br>Session: ASIA·LONDON·NY·OTHER<br>Trend: SMA50 slope ±0.0005<br>Vol: ATR24 vs SMA20(ATR24)"]
-        TBM["🏷️ Triple Barrier Labeling<br>win=2.0×ATR · loss=1.0×ATR<br>Horizon=50 bars · ATR window=24<br>Labels: +1(long) · -1(short) · 0(timeout) · NaN(whipsaw)<br>Outputs: tbm_label + long/short pnl/exit/duration"]
-        MATRIX["📋 State Matrix<br>18 columns · 105k+ rows<br>Saved as parquet"]
+        REGIME["🔀 Regime Tagging<br>Session: ASIA·LONDON·NY·OTHER<br>Trend: SMA50 slope ±0.0005<br>Vol: ATR24 vs SMA20(ATR24)<br>1h candles"]
+        TBM["🏷️ Triple Barrier Labeling<br>win=2.0×ATR · loss=1.0×ATR<br>Horizon=24 bars · ATR window=24<br>Labels: +1(long) · -1(short) · 0(timeout) · NaN(whipsaw)<br>Outputs: tbm_label + long/short pnl/exit/duration/outcome"]
+        MATRIX["📋 State Matrix<br>21 columns · ~36k rows<br>Saved as parquet"]
         REGIME --> TBM --> MATRIX
     end
 
@@ -44,7 +44,7 @@ flowchart TD
         end
 
         VALIDATE["✅ Code Validation<br>3 attempts max<br>Syntax→Run→Type→Trades<br>Error feedback injected"]
-        BACKTEST1["⚡ VectorizedBacktester<br>Fee=0.075% · No overlaps<br>Numba accelerated"]
+        BACKTEST1["⚡ VectorizedBacktester<br>Fee=0.04% · 0.5% risk/trade<br>Numba accelerated"]
         DIAG1["📊 DiagnosticsEngine<br>60-row bucket table<br>GLOBAL·1D·2D·3D<br>24 micro-buckets"]
         FIT1["🎯 Fitness Score<br>Global_Sharpe × ln(N) × Coverage<br>Coverage = trade-weighted<br>Hard elim if Sharpe≤0"]
 

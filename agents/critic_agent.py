@@ -68,9 +68,13 @@ Scan strictly in this order:
 
 ═══ UNVIABLE CONDITIONS ═══
 Declare UNVIABLE immediately if ANY of these are true:
-- GLOBAL sharpe < -0.5 (with sufficient_evidence=True)
+- GLOBAL sharpe < -5.0 (with sufficient_evidence=True)
 - Zero 3D buckets have both sufficient_evidence=True AND sharpe > 0
 - GLOBAL max_consecutive_losses > 20
+
+Note: The Sharpe threshold is intentionally lenient (-5.0) to let the
+refinement loop attempt recovery on strategies that are poor but not
+completely broken.
 
 ═══ OUTPUT FORMAT ═══
 Respond in exactly this structure, nothing else:
@@ -120,29 +124,46 @@ def _parse_critic_response(raw_response: str) -> dict:
     Returns dict with keys:
         primary_failure, root_cause, surgical_fix, expected_impact, verdict
 
+    Fields may span multiple lines (e.g. code blocks in surgical_fix).
+    Each field runs from its prefix until the next field prefix or end of text.
+
     If any field is missing, verdict defaults to UNVIABLE (safe fallback).
     """
-    fields = {
-        "primary_failure": "PRIMARY_FAILURE:",
-        "root_cause": "ROOT_CAUSE:",
-        "surgical_fix": "SURGICAL_FIX:",
-        "expected_impact": "EXPECTED_IMPACT:",
-        "verdict": "VERDICT:",
-    }
+    prefixes = [
+        ("primary_failure", "PRIMARY_FAILURE:"),
+        ("root_cause", "ROOT_CAUSE:"),
+        ("surgical_fix", "SURGICAL_FIX:"),
+        ("expected_impact", "EXPECTED_IMPACT:"),
+        ("verdict", "VERDICT:"),
+    ]
 
-    result = {}
-    for key, prefix in fields.items():
-        result[key] = ""
-        for line in raw_response.strip().split("\n"):
-            line_stripped = line.strip()
-            if line_stripped.upper().startswith(prefix.upper()):
-                # Extract value after the prefix
-                value = line_stripped[len(prefix):].strip()
-                result[key] = value
-                break
+    # Find the start position of each field in the raw text
+    upper_text = raw_response.upper()
+    positions = []
+    for key, prefix in prefixes:
+        idx = upper_text.find(prefix.upper())
+        if idx != -1:
+            positions.append((idx, key, prefix))
 
-    # Normalize verdict
-    verdict_upper = result["verdict"].upper().strip()
+    # Sort by position in text
+    positions.sort(key=lambda x: x[0])
+
+    result = {key: "" for key, _ in prefixes}
+
+    for i, (idx, key, prefix) in enumerate(positions):
+        # Value starts after the prefix
+        start = idx + len(prefix)
+        # Value ends at the next field's start, or end of text
+        if i + 1 < len(positions):
+            end = positions[i + 1][0]
+        else:
+            end = len(raw_response)
+        value = raw_response[start:end].strip()
+        result[key] = value
+
+    # Normalize verdict (strip markdown artifacts like ** or *)
+    import re
+    verdict_upper = re.sub(r"[^A-Z]", "", result["verdict"].upper())
     if verdict_upper in ("CONTINUE", "UNVIABLE"):
         result["verdict"] = verdict_upper
     else:
@@ -209,7 +230,7 @@ async def run_critic(
         client = anthropic.AsyncAnthropic()
         response = await client.messages.create(
             model=OPUS_MODEL,
-            max_tokens=1024,
+            max_tokens=2048,
             temperature=CRITIC_TEMPERATURE,
             system=CRITIC_SYSTEM_PROMPT,
             messages=[{"role": "user", "content": user_message}],
@@ -303,6 +324,28 @@ VERDICT: CONTINUE"""
     parsed4 = _parse_critic_response(partial)
     assert parsed4["verdict"] == "UNVIABLE", "Missing surgical_fix should force UNVIABLE"
     print(f"  verdict: {parsed4['verdict']} (forced UNVIABLE due to missing fix)")
+    print("  OK")
+
+    # ── Test 4b: Multi-line surgical_fix ─────────────────────────────────
+    print("\n=== Test 4b: Multi-line surgical_fix ===")
+    multiline = """\
+PRIMARY_FAILURE: [3D | OTHER | DOWNTREND | LOW_VOL] | sharpe=-0.12 | n=141
+ROOT_CAUSE: Routing sends OTHER|DT|LV to trend which has negative Sharpe
+SURGICAL_FIX: Change two routing entries:
+```python
+('OTHER', 'DOWNTREND', 'LOW_VOL'): 'volatility',  # was 'trend'
+('OTHER', 'UPTREND', 'LOW_VOL'): 'volatility',    # was 'volume'
+```
+EXPECTED_IMPACT: Removes 285 trades from losing sub-strategies
+VERDICT: CONTINUE"""
+
+    parsed4b = _parse_critic_response(multiline)
+    assert parsed4b["verdict"] == "CONTINUE"
+    assert "volatility" in parsed4b["surgical_fix"], \
+        f"Multi-line fix should contain 'volatility', got: {parsed4b['surgical_fix'][:80]}"
+    assert "('OTHER'" in parsed4b["surgical_fix"]
+    print(f"  surgical_fix: {parsed4b['surgical_fix'][:100]}...")
+    print(f"  verdict: {parsed4b['verdict']}")
     print("  OK")
 
     # ── Test 5: Diagnostics table formatting ──────────────────────────────

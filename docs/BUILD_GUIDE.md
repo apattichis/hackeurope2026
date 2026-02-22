@@ -108,8 +108,8 @@ class Strategy(Indicators):
 # core/config.py — Single source of truth for all constants
 
 # Data
-DATA_PATH = "data/sol_usd_15m_3y.parquet"
-STATE_MATRIX_PATH = "data/state_matrix.parquet"
+DATA_PATH = "data/sol_usd_1h.parquet"
+STATE_MATRIX_PATH = "data/state_matrix_1h.parquet"
 
 # State Matrix / Regime Detection
 TREND_SMA_WINDOW = 50
@@ -121,11 +121,12 @@ VOL_SMA_WINDOW = 20
 # Triple Barrier (fixed system-wide)
 TBM_WIN = 2.0
 TBM_LOSS = 1.0
-TBM_TIME_HORIZON = 50
+TBM_TIME_HORIZON = 24              # 24 bars = 24 hours on 1h
 TBM_TIE_BREAK = "stop_first"
 
 # Backtesting
-BACKTEST_FEE = 0.00075
+BACKTEST_FEE = 0.00040             # 0.04% MEXC taker fee
+RISK_PER_TRADE = 0.005             # 0.5% risk per trade
 
 # Diagnostics
 MIN_TRADES_SUFFICIENT_EVIDENCE = 30
@@ -134,11 +135,11 @@ MIN_TRADES_SUFFICIENT_EVIDENCE = 30
 MAX_STRATEGIES_PER_SPECIALIST = 3
 MAX_GENERATION_ATTEMPTS = 3
 STRATEGY_TIMEOUT_SECONDS = 60
-MIN_INDICATORS = 2
-MAX_INDICATORS = 4
+MIN_INDICATORS_PER_PROMPT = 2
+MAX_INDICATORS_PER_PROMPT = 4
 
 # Fitness
-# (no additional constants — formula is Global_Sharpe * ln(N) * Coverage)
+MIN_TOTAL_TRADES_TRADABLE_BUCKETS = 300
 
 # Niche Selection
 MIN_FITNESS_THRESHOLD = -999.0  # only filter truly broken strategies (-999)
@@ -146,6 +147,10 @@ MIN_FITNESS_THRESHOLD = -999.0  # only filter truly broken strategies (-999)
 # Scientist
 MAX_SCIENTIST_ITERATIONS = 5
 MIN_IMPROVEMENT_THRESHOLD = 0.05
+
+# UNVIABLE Thresholds
+UNVIABLE_GLOBAL_SHARPE = -5.0
+UNVIABLE_MAX_CONSEC_LOSSES = 20
 
 # Models
 SONNET_MODEL = "claude-sonnet-4-6"
@@ -457,8 +462,9 @@ Use Plotly for all charts (heatmap + PnL curves).
 council_of_alphas/
 │
 ├── data/
-│   ├── sol_usd_15m_3y.parquet          # Raw Binance data (you provide)
-│   └── state_matrix.parquet            # Auto-generated on first run
+│   ├── sol_usd_1h.parquet              # Raw Binance 1h data
+│   ├── state_matrix_1h.parquet         # Auto-generated on first run (21 columns)
+│   └── results/                        # Pipeline output (speciation, champions, ranked)
 │
 ├── docs/
 │   ├── MASTER_SPEC.md                  # Complete specification

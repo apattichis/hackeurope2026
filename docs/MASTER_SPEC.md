@@ -1,6 +1,6 @@
 # Council of Alphas — Master Specification
 **HackEurope 2026 | Team: The Greeks (Andreas + Markos)**
-**Version: Final | Date: February 21, 2026**
+**Version: Final | Date: February 22, 2026**
 
 ---
 
@@ -15,9 +15,9 @@ An evolutionary multi-agent framework that prevents mode collapse in LLM strateg
 | Parameter | Value |
 |---|---|
 | Instrument | SOL-USD |
-| Timeframe | 15-minute candles |
+| Timeframe | 1-hour candles |
 | Source | Binance (parquet file) |
-| Date Range | 3 years |
+| Date Range | Jan 2022 - Feb 2026 (~36k bars) |
 | Index | `open_time` (UTC datetime, already set as index) |
 
 **Columns kept from raw Binance data:**
@@ -51,7 +51,7 @@ Based on UTC hour of candle:
 | CONSOLIDATION | -0.0005 ≤ slope ≤ +0.0005 |
 
 ### 2.3 Volatility Regime
-- ATR window: 24 bars (= 6 hours on 15m)
+- ATR window: 24 bars (= 24 hours on 1h)
 - Smoothing: SMA(20) of ATR
 
 | Label | Condition |
@@ -71,8 +71,8 @@ Based on UTC hour of candle:
 |---|---|
 | Win multiplier | 2.0 × ATR |
 | Loss multiplier | 1.0 × ATR |
-| Time horizon | 50 bars (~12.5 hours) |
-| ATR window | 24 bars (6 hours) |
+| Time horizon | 24 bars (~24 hours on 1h) |
+| ATR window | 24 bars (24 hours on 1h) |
 | Tie-break | stop_first (worst-case) |
 
 ### 3.2 Label Values
@@ -107,7 +107,7 @@ Based on UTC hour of candle:
 ### 4.1 Definition
 A single pre-computed pandas DataFrame saved as parquet. Built **once**, loaded on every subsequent run. Every downstream component reads from it — nothing is recomputed.
 
-### 4.2 Complete Column Schema
+### 4.2 Complete Column Schema (21 columns)
 
 | Column | Source | Type |
 |---|---|---|
@@ -119,6 +119,7 @@ A single pre-computed pandas DataFrame saved as parquet. Built **once**, loaded 
 | `quote_volume` | Raw Binance | float |
 | `count` | Raw Binance | float |
 | `taker_buy_volume` | Raw Binance | float |
+| `ATR_24` | StateMatrixBuilder | float |
 | `session` | StateMatrixBuilder | str: ASIA/LONDON/NY/OTHER |
 | `trend_regime` | StateMatrixBuilder | str: UPTREND/DOWNTREND/CONSOLIDATION |
 | `vol_regime` | StateMatrixBuilder | str: HIGH_VOL/LOW_VOL |
@@ -126,14 +127,17 @@ A single pre-computed pandas DataFrame saved as parquet. Built **once**, loaded 
 | `tbm_long_pnl` | core/labeling.py | float |
 | `tbm_long_exit_idx` | core/labeling.py | int |
 | `tbm_long_duration` | core/labeling.py | int |
+| `tbm_long_outcome` | core/labeling.py | str: TP/SL/TIMEOUT |
 | `tbm_short_pnl` | core/labeling.py | float |
 | `tbm_short_exit_idx` | core/labeling.py | int |
 | `tbm_short_duration` | core/labeling.py | int |
+| `tbm_short_outcome` | core/labeling.py | str: TP/SL/TIMEOUT |
 
 **Index:** `open_time` (UTC datetime)
 
 ### 4.3 Build Rules
-- No intermediate calculation columns saved (sma_50, atr values etc. are dropped)
+- ATR_24 is kept (used by backtester for leverage calculation)
+- Other intermediate columns (sma_50, sma_50_slope_3, ATR_24_SMA_20) are dropped
 - If parquet file exists on disk → load it, skip build
 - If parquet does not exist → build and save
 - `force_rebuild=True` parameter to override cache
@@ -148,7 +152,7 @@ StateMatrixBuilder(
     vol_sma_window=20,
     tbm_win=2.0,                    # fixed system-wide
     tbm_loss=1.0,                   # fixed system-wide
-    tbm_time_horizon=50,
+    tbm_time_horizon=24,            # 24 bars = 24 hours on 1h
     tbm_tie_break="stop_first",
 )
 ```
@@ -290,7 +294,10 @@ Custom `VectorizedBacktester` — no VectorBT dependency. Numba-accelerated with
 ### 6.2 Parameters
 | Parameter | Value |
 |---|---|
-| Fee | 0.00075 (0.075% per trade) |
+| Fee | 0.00040 (0.04% MEXC taker fee) |
+| Risk per trade | 0.5% of account equity |
+| Initial capital | $100,000 |
+| Max leverage | 20x |
 | Capital lock | No overlapping trades allowed |
 | TBM | Reads pre-computed columns from State Matrix |
 
@@ -311,7 +318,8 @@ State Matrix (with TBM columns)
 | `exit_index` | Exit row index |
 | `duration` | Candles open |
 | `side` | 1 (long) or -1 (short) |
-| `net_trade_return` | PnL after fee |
+| `net_trade_return` | Leveraged portfolio return after fee |
+| `account_balance` | Compounding equity after trade |
 | `session` | Regime at entry |
 | `trend_regime` | Regime at entry |
 | `vol_regime` | Regime at entry |
@@ -387,8 +395,9 @@ Measures what fraction of actual trades occur in profitable regimes. Trade-weigh
 if global_row.sufficient_evidence == False: return -999
 if isnan(global_row.sharpe): return -999
 if len(active_3d_buckets) == 0: return -999
+if total_trades_in_tradable_3d_buckets < 300: return -999
 ```
-Note: Negative Sharpe is allowed through — strategies with Sharpe between -0.5 and 0 can compete and be improved by the Scientist loop. The is_unviable() gate (Sharpe < -0.5) catches truly hopeless strategies before wasting API calls.
+Note: Negative Sharpe is allowed through - strategies with Sharpe between -5.0 and 0 can compete and be improved by the Scientist loop. The is_unviable() gate (Sharpe < -5.0) catches truly hopeless strategies before wasting API calls. The 300-trade minimum ensures sufficient evidence across tradable buckets.
 
 ### 8.4 Why This Formula Works
 - **Global_Sharpe** gates: is this strategy actually profitable risk-adjusted?
@@ -454,22 +463,21 @@ signal = np.sign(weighted_sum)
 ```
 
 ### 10.5 Code Structure
-All hybrids are **inline** — one self-contained Strategy class. Parent logic is copied with clear section comments:
+All hybrids are **inline** Strategy subclasses with combination parameters as CLASS ATTRIBUTES (modifiable by the Scientist's Refiner). Champion strategy references are injected via `_champion_strategies` dict:
 ```python
 class RegimeRouterHybrid(Strategy):
     name = "regime_router"
     family = "hybrid"
-    description = "..."
-    
+    description = "Routes to best champion per regime bucket"
+
+    ROUTING = {('ASIA', 'UPTREND', 'HIGH_VOL'): 'volume', ...}
+    FALLBACK = 'volatility'
+
     def generate_signals(self, data):
-        # ── TREND CHAMPION LOGIC ──────────────
-        # ... inlined trend logic ...
-        
-        # ── MOMENTUM CHAMPION LOGIC ───────────
-        # ... inlined momentum logic ...
-        
-        # ── ROUTING TABLE ─────────────────────
-        # ... routing logic ...
+        champ_sigs = {}
+        for fam, strat in self._champion_strategies.items():
+            champ_sigs[fam] = strat.generate_signals(data)
+        # ... routing logic using ROUTING table ...
 ```
 
 ### 10.6 Degraded Champion Handling
@@ -500,9 +508,11 @@ If a champion has zero sufficient_evidence 3D buckets → use its global signal 
 
 ### 11.3 UNVIABLE Conditions
 Declare UNVIABLE immediately if ANY of these are true:
-- GLOBAL Sharpe < -0.5 (with sufficient_evidence=True)
+- GLOBAL Sharpe < -5.0 (with sufficient_evidence=True)
 - Zero 3D buckets have both sufficient_evidence=True AND Sharpe > 0
 - GLOBAL max_consecutive_losses > 20
+
+Note: The Sharpe threshold is intentionally lenient (-5.0) to let the Scientist loop attempt recovery on strategies that are poor but not completely broken.
 
 ### 11.4 Fallback
 If all 3 hybrids are declared UNVIABLE → fall back to best champion by fitness score.
@@ -541,9 +551,13 @@ Scan strictly in this order:
 
 ═══ UNVIABLE CONDITIONS ═══
 Declare UNVIABLE immediately if ANY of these are true:
-- GLOBAL sharpe < -0.5 (with sufficient_evidence=True)
+- GLOBAL sharpe < -5.0 (with sufficient_evidence=True)
 - Zero 3D buckets have both sufficient_evidence=True AND sharpe > 0
 - GLOBAL max_consecutive_losses > 20
+
+Note: The Sharpe threshold is intentionally lenient (-5.0) to let the
+refinement loop attempt recovery on strategies that are poor but not
+completely broken.
 
 ═══ OUTPUT FORMAT ═══
 Respond in exactly this structure, nothing else:
@@ -590,7 +604,7 @@ No explanation. No markdown. No imports.
 PIPELINE START
 │
 ├── 1. LOAD DATA
-│   └── Load Binance SOL-USD 15m parquet
+│   └── Load Binance SOL-USD 1h parquet
 │
 ├── 2. BUILD / LOAD STATE MATRIX
 │   ├── If parquet exists → load
@@ -656,7 +670,7 @@ PIPELINE START
 
 ### 12.3 Configuration Constants
 ```python
-# core/config.py
+# core/config.py (see file for full list)
 MAX_STRATEGIES_PER_SPECIALIST = 3
 MAX_GENERATION_ATTEMPTS = 3
 STRATEGY_TIMEOUT_SECONDS = 60
@@ -664,11 +678,15 @@ MAX_SCIENTIST_ITERATIONS = 5
 MIN_IMPROVEMENT_THRESHOLD = 0.05  # early exit if below this twice
 TBM_WIN = 2.0
 TBM_LOSS = 1.0
-TBM_TIME_HORIZON = 50
+TBM_TIME_HORIZON = 24            # 24 bars = 24 hours on 1h
 TBM_ATR_WINDOW = 24
-BACKTEST_FEE = 0.00075
+BACKTEST_FEE = 0.00040           # 0.04% MEXC taker fee
+RISK_PER_TRADE = 0.005           # 0.5% risk per trade
 MIN_TRADES_SUFFICIENT_EVIDENCE = 30
+MIN_TOTAL_TRADES_TRADABLE_BUCKETS = 300
 TREND_SLOPE_THRESHOLD = 0.0005
+UNVIABLE_GLOBAL_SHARPE = -5.0
+UNVIABLE_MAX_CONSEC_LOSSES = 20
 ```
 
 ### 12.4 Parallelism
@@ -688,7 +706,7 @@ Every stage emits structured log events consumed by Streamlit UI in real time.
 ### 13.1 Panel 1 — Pipeline Status (Live)
 Real-time log of every pipeline event. Shows the system is actively thinking.
 ```
-✅ State Matrix loaded (105,247 candles)
+✅ State Matrix loaded (~36,000 candles)
 ⚡ Trend Specialist generating strategy 1/3...
 ✅ Trend Strategy 1: fitness=2.84, sharpe=0.41, trades=623
 ...

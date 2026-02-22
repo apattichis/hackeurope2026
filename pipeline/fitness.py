@@ -16,7 +16,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from config import MIN_TOTAL_TRADES_TRADABLE_BUCKETS
+from config import MIN_TOTAL_TRADES_TRADABLE_BUCKETS, UNVIABLE_GLOBAL_SHARPE, UNVIABLE_MAX_CONSEC_LOSSES
 
 
 def compute_fitness(diagnostics_df: pd.DataFrame) -> float:
@@ -92,9 +92,9 @@ def is_unviable(diagnostics_df: pd.DataFrame) -> tuple[bool, str]:
     Returns (is_unviable: bool, reason: str).
 
     UNVIABLE if any of:
-    - GLOBAL Sharpe < -0.5 (with sufficient evidence)
+    - GLOBAL Sharpe < UNVIABLE_GLOBAL_SHARPE (with sufficient evidence)
     - Zero 3D buckets with sufficient_evidence=True AND Sharpe > 0
-    - GLOBAL max_consecutive_losses > 20
+    - GLOBAL max_consecutive_losses > UNVIABLE_MAX_CONSEC_LOSSES
     """
     global_rows = diagnostics_df[diagnostics_df["granularity"] == "GLOBAL"]
     if len(global_rows) == 0:
@@ -106,9 +106,9 @@ def is_unviable(diagnostics_df: pd.DataFrame) -> tuple[bool, str]:
     if (
         global_row["sufficient_evidence"]
         and not pd.isna(global_row["sharpe"])
-        and global_row["sharpe"] < -0.5
+        and global_row["sharpe"] < UNVIABLE_GLOBAL_SHARPE
     ):
-        return True, f"GLOBAL sharpe={global_row['sharpe']:.3f} < -0.5 threshold"
+        return True, f"GLOBAL sharpe={global_row['sharpe']:.3f} < {UNVIABLE_GLOBAL_SHARPE} threshold"
 
     # Check 2: no profitable 3D buckets
     active_3d = diagnostics_df[
@@ -122,11 +122,11 @@ def is_unviable(diagnostics_df: pd.DataFrame) -> tuple[bool, str]:
     # Check 3: catastrophic loss streak
     if (
         global_row["sufficient_evidence"]
-        and global_row["max_consecutive_losses"] > 20
+        and global_row["max_consecutive_losses"] > UNVIABLE_MAX_CONSEC_LOSSES
     ):
         return (
             True,
-            f"GLOBAL max_consecutive_losses={global_row['max_consecutive_losses']} > 20",
+            f"GLOBAL max_consecutive_losses={global_row['max_consecutive_losses']} > {UNVIABLE_MAX_CONSEC_LOSSES}",
         )
 
     return False, ""

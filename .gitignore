@@ -11,10 +11,12 @@ __pycache__/
 venv/
 env/
 
-# Data (keep data/README.md only)
+# Data (keep data/README.md and data/download_data.py only)
 data/*.parquet
 data/*.csv
 data/*.h5
+data/*.json
+data/results/
 
 # IDE
 .vscode/

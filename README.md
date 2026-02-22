@@ -1,87 +1,69 @@
 # Council of Alphas
 
-## READ THIS FIRST
+**HackEurope 2026 | Team: The Greeks (Andreas + Markos)**
 
-You are building the Council of Alphas — an evolutionary multi-agent trading framework.
+An evolutionary multi-agent trading framework that prevents mode collapse in LLM strategy generation through enforced specialist diversity, niche-preserving selection, deterministic hybrid construction, and evidence-locked diagnostic refinement.
 
-## Your First 3 Actions
+## Quick Start
 
-1. **Read** `docs/MASTER_SPEC.md` — every locked decision is in here
-2. **Read** `docs/BUILD_GUIDE.md` — exact step-by-step instructions
-3. **Read** `core/config.py` — all constants before touching any other file
+1. **Read** `docs/MASTER_SPEC.md` — every locked decision
+2. **Read** `core/config.py` — all constants
+3. **Run** `python run_stage3.py` — full pipeline
 
-## What Already Exists (DO NOT rewrite core logic)
-
-| File | Status | Action |
-|---|---|---|
-| `core/whitelist_indicators.py` | ✅ Ready | Do not touch |
-| `core/labeling.py` | ✅ Ready | Do not touch |
-| `core/backtesting.py` | ✅ Ready | Do not touch |
-| `core/diagnostics.py` | ✅ Ready | Do not touch |
-| `core/state_builder.py` | ✅ Parameters updated | Do not touch |
-| `pipeline/indicator_sampler.py` | ✅ Ready | Do not touch |
-| `core/strategy_base.py` | ✅ Ready | Do not touch |
-| `core/config.py` | ✅ Ready | Do not touch |
-| `pipeline/fitness.py` | ✅ Ready | Do not touch |
-| `pipeline/prompt_builder.py` | ✅ Ready | Do not touch |
-
-## What You Need to Build
+## Pipeline Overview
 
 ```
-pipeline/specialist_agent.py   → async strategy generation + validation + retry
-pipeline/niche_selector.py     → champion selection per family
-pipeline/hybrid_builder.py     → HybridBuilder (3 deterministic templates, pure Python)
-agents/critic_agent.py         → Claude Opus evidence-locked diagnosis
-agents/refiner_agent.py        → Claude Sonnet surgical fix application
-agents/scientist.py            → full refinement loop (max 5 iterations)
-orchestrator.py                → main pipeline controller
-app.py                         → Streamlit UI (Andreas)
+12 strategies (3/family) → 4 champions (1/family) → 3 hybrids → Scientist loop → ranked survivors
 ```
+
+- **Data**: SOL-USD 1h candles (~36k bars, Jan 2022 - Feb 2026)
+- **Families**: trend, momentum, volatility, volume
+- **Hybrids**: Regime Router, Consensus Gate, Weighted Combination
+- **Backtesting**: $100k initial, 0.5% risk/trade, MEXC 0.04% fee, TBM 2.0/1.0/24
+- **Models**: Claude Sonnet (specialists + refiner), Claude Opus (critic)
 
 ## Repo Structure
 
 ```
-council_of_alphas/
+hackeurope2026/
 │
-├── .env
+├── .env                          # API keys (ANTHROPIC_API_KEY)
 ├── .gitignore
 ├── README.md
 ├── requirements.txt
-├── orchestrator.py               ← to build
-├── app.py                        ← to build
+├── orchestrator.py               # Main pipeline controller
+├── run_stage3.py                 # CLI entry point
 │
 ├── core/
-│   ├── __init__.py
-│   ├── config.py
-│   ├── strategy_base.py
-│   ├── whitelist_indicators.py
-│   ├── labeling.py
-│   ├── backtesting.py
-│   ├── diagnostics.py
-│   └── state_builder.py
+│   ├── config.py                 # All constants (single source of truth)
+│   ├── strategy_base.py          # Strategy base class (extends Indicators)
+│   ├── whitelist_indicators.py   # Full indicator library
+│   ├── labeling.py               # Triple Barrier Method labeling
+│   ├── backtesting.py            # VectorizedBacktester (numba-accelerated)
+│   ├── diagnostics.py            # Hierarchical Sharpe/WR across regime buckets
+│   └── state_builder.py          # Builds state matrix (OHLCV + regimes + TBM)
 │
 ├── pipeline/
-│   ├── __init__.py
-│   ├── indicator_sampler.py
-│   ├── fitness.py
-│   ├── prompt_builder.py
-│   ├── niche_selector.py
-│   ├── hybrid_builder.py
-│   └── specialist_agent.py       ← to build
+│   ├── indicator_sampler.py      # Random indicator subset per strategy
+│   ├── fitness.py                # Fitness = Global_Sharpe * ln(N) * Coverage
+│   ├── prompt_builder.py         # Specialist prompt construction
+│   ├── specialist_agent.py       # LLM strategy generation + validation + retry
+│   ├── niche_selector.py         # Champion selection (top 1 per family)
+│   └── hybrid_builder.py         # 3 hybrid templates (pure Python, no LLM)
 │
 ├── agents/
-│   ├── __init__.py
-│   ├── critic_agent.py           ← to build
-│   ├── refiner_agent.py          ← to build
-│   └── scientist.py              ← to build
+│   ├── critic_agent.py           # Claude Opus evidence-locked diagnosis
+│   ├── refiner_agent.py          # Claude Sonnet surgical fix application
+│   └── scientist.py              # Critic/Refiner loop (max 5 iterations)
 │
 ├── eda/
-│   └── eda.ipynb                    ← state matrix EDA (regime coverage, TBM edge, drift)
+│   ├── eda.ipynb                 # State matrix EDA (regime coverage, TBM edge)
+│   └── winners_analysis.ipynb    # Post-run analysis of winning strategies
 │
 ├── data/
-│   ├── README.md
-│   ├── sol_usd_15m_3y.parquet
-│   └── state_matrix.parquet
+│   ├── sol_usd_1h.parquet        # Raw 1h candle data
+│   ├── state_matrix_1h.parquet   # Pre-built state matrix (21 columns)
+│   └── results/                  # Pipeline output (speciation, champions, ranked)
 │
 └── docs/
     ├── Council_of_Alphas_SPEC.pdf
@@ -93,13 +75,13 @@ council_of_alphas/
 
 ## 10 Rules That Must Never Be Broken
 
-1. All constants come from `core/config.py` — no magic numbers anywhere
-2. `tbm_win` and `tbm_loss` are NOT on Strategy objects — core/config.py only
-3. State Matrix is read-only after build — never modify in place
-4. Fitness formula is exactly: `Global_Sharpe * ln(N) * Coverage` — no deviations
+1. All constants come from `core/config.py` - no magic numbers anywhere
+2. `tbm_win` and `tbm_loss` are NOT on Strategy objects - core/config.py only
+3. State Matrix is read-only after build - never modify in place
+4. Fitness formula is exactly: `Global_Sharpe * ln(N) * Coverage` - no deviations
 5. Coverage is trade-weighted (by trade_count), not bucket-count-weighted
 6. Critic receives ONLY `sufficient_evidence=True` rows
-7. HybridBuilder is pure Python — zero LLM calls
-8. All 3 hybrids use all 4 champions — no 2-champion hybrids
-9. Inline hybrid code only — no compositional/import-based hybrids
-10. Specialists run parallel (`asyncio.gather`), Scientist loop runs sequential
+7. HybridBuilder is pure Python - zero LLM calls
+8. All 3 hybrids use all surviving champions - no partial champion hybrids
+9. Inline hybrid code only - no compositional/import-based hybrids
+10. Specialists run parallel (`asyncio.gather`), Scientist loop runs parallel per hybrid

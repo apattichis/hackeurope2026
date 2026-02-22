@@ -36,6 +36,7 @@ from config import (
     MAX_GENERATION_ATTEMPTS,
     STRATEGY_TIMEOUT_SECONDS,
     BACKTEST_FEE,
+    RISK_PER_TRADE,
     MIN_TRADES_SUFFICIENT_EVIDENCE,
     SONNET_MODEL,
     SPECIALIST_TEMPERATURE,
@@ -246,7 +247,7 @@ async def generate_one_strategy(
         # 6. Backtest (add signals to a copy — state matrix is read-only)
         df = state_matrix.copy()
         df["_signal"] = signals.values
-        backtester = VectorizedBacktester(fee=BACKTEST_FEE)
+        backtester = VectorizedBacktester(fee=BACKTEST_FEE, risk_per_trade=RISK_PER_TRADE)
         trade_log = backtester.run(df, "_signal")
 
         # 7. Diagnostics
@@ -478,7 +479,7 @@ if __name__ == "__main__":
     # ── Test 4: Backtest ──────────────────────────────────────────────────
     df = state_matrix.copy()
     df["_signal"] = signals.values
-    backtester = VectorizedBacktester(fee=BACKTEST_FEE)
+    backtester = VectorizedBacktester(fee=BACKTEST_FEE, risk_per_trade=RISK_PER_TRADE)
     trade_log = backtester.run(df, "_signal")
     print(f"  Backtest: OK ({len(trade_log)} trades)")
 
