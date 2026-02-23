@@ -9,7 +9,7 @@
   <a href="https://council-of-alphas.vercel.app">Live Dashboard</a> | <a href="https://www.hackeurope.com/">HackEurope</a>
 </p>
 
-Council of Alphas is an evolutionary multi-agent framework that addresses both the mode collapse problem in LLM strategy generation and the evaluation cost of pure evolutionary search. Left unconstrained, LLMs tend to converge on a narrow set of familiar trading strategies. Pure evolutionary search avoids this but requires prohibitively many candidate evaluations. Our approach borrows the structure of evolutionary algorithms - speciation, niche-preserving selection, and hybridization - to enforce diversity on LLM-generated candidates, while using the LLM as the generation operator to produce higher-quality starting points than random mutation would. Four specialist agents, each locked to a distinct strategy family with randomized indicator subsets, generate candidates that are diverse by construction. Niche selection preserves one champion per family, and deterministic hybridization recombines them into three architectures that blend their complementary strengths. A regime-aware filter then sharpens each hybrid by keeping trades only in market conditions where it has demonstrated positive performance, silencing it everywhere else. The result is a pipeline that produces diverse, refined strategies in a single round of LLM calls and one deterministic optimization pass.
+Council of Alphas is an evolutionary multi-agent framework that addresses both loss of diversity in LLM strategy generation and the evaluation cost of pure evolutionary search. Left unconstrained, LLMs tend to converge on a narrow set of familiar trading strategies. Pure evolutionary search avoids this but requires prohibitively many candidate evaluations. Our approach borrows the structure of evolutionary algorithms, speciation, niche-preserving selection, and hybridization, to enforce diversity on LLM-generated candidates, while using the LLM as the generation operator to produce higher-quality starting points than random mutation would. Four specialist agents, each locked to a distinct strategy family with randomized indicator subsets, generate candidates that are diverse by construction. Niche selection preserves one champion per family, and deterministic hybridization recombines them into three architectures that blend their complementary strengths. A regime-aware filter then sharpens each hybrid by keeping trades only in market conditions where it has demonstrated positive performance, silencing it everywhere else. The result is a pipeline that produces diverse, refined strategies in a single round of LLM calls and one deterministic optimization pass, improving performance relative to the initial LLM-generated candidates.
 
 <p align="center">
   <img src="img/dashboard.png" alt="Dashboard" width="800">
@@ -38,7 +38,7 @@ flowchart LR
 </details>
 
 1. **Speciation** - 4 LLM specialists (Claude Opus) each generate 3 strategies for their family (trend, momentum, volatility, volume)
-2. **Selection** - Best strategy per family becomes a champion (fitness = Sharpe x ln(N) x coverage)
+2. **Selection** - Best strategy per family becomes a champion
 3. **Hybridization** - 3 hybrid templates combine all 4 champions (Consensus Gate, Regime Router, Weighted Combination)
 4. **Regime Filter** - Deterministic 2D filter disables trading in unprofitable regime buckets (session x trend x volatility)
 5. **Ranking** - Survivors ranked by fitness score
