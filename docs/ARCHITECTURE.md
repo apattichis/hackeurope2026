@@ -33,7 +33,7 @@ flowchart TD
     subgraph S1["STAGE 1 — SPECIATION (parallel, asyncio)"]
         direction LR
 
-        SAMPLER["🎲 IndicatorSampler<br>Random subset per call<br>Prevents intra-specialist<br>mode collapse"]
+        SAMPLER["🎲 IndicatorSampler<br>Random subset per call<br>Prevents intra-specialist<br>loss of diversity"]
 
         subgraph SPECS["4 Specialist Agents (Claude Opus · temp=0)"]
             direction TB

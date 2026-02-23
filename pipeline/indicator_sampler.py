@@ -1,7 +1,7 @@
 """
 indicator_sampler.py — Council of Alphas
 Randomly samples bounded subsets of whitelisted indicators per specialist family.
-Prevents intra-specialist mode collapse — LLM cannot use what it cannot see.
+Prevents intra-specialist loss of diversity — LLM cannot use what it cannot see.
 
 IMPORTANT: This class is a SAMPLING ENGINE only.
 Prompt construction is handled by prompt_builder.py.

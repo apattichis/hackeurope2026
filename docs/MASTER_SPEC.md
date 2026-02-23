@@ -6,7 +6,7 @@
 
 ## 0. One-Line Summary
 
-An evolutionary multi-agent framework that prevents mode collapse in LLM strategy generation through enforced specialist diversity, niche-preserving selection, deterministic hybrid construction, and regime-aware filtering.
+An evolutionary multi-agent framework that prevents loss of diversity in LLM strategy generation through enforced specialist diversity, niche-preserving selection, deterministic hybrid construction, and regime-aware filtering.
 
 ---
 
