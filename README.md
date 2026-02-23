@@ -37,12 +37,6 @@ flowchart LR
 <img src="img/pipeline_flow.png" alt="Pipeline Flow" width="700">
 </details>
 
-1. **Speciation** - 4 LLM specialists (Claude Opus) each generate 3 strategies for their family (trend, momentum, volatility, volume)
-2. **Selection** - Best strategy per family becomes a champion
-3. **Hybridization** - 3 hybrid templates combine all 4 champions (Consensus Gate, Regime Router, Weighted Combination)
-4. **Regime Filter** - Deterministic 2D filter disables trading in unprofitable regime buckets (session x trend x volatility)
-5. **Ranking** - Survivors ranked by fitness score
-
 ## Example Results
 
 | Rank | Strategy             | Ann. Sharpe | Win Rate | Trades | Return | Max DD  |
